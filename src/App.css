@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+
+@theme {
+  /* Elanova brand palette */
+  --color-ink: #22281f;
+  --color-forest: #33503f;
+  --color-forest-dark: #23362a;
+  --color-forest-light: #4a6b56;
+  --color-sand: #f1e8da;
+  --color-sand-light: #fbf7f1;
+  --color-gold: #a9832f;
+  --color-gold-light: #d4b876;
+  --color-blush: #e3c9c0;
+  --color-blush-dark: #c9a79c;
+
+  --font-display: "Fraunces", ui-serif, serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    background-color: var(--color-sand-light);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+  }
+  ::selection {
+    background-color: var(--color-gold-light);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  .ripple-underline {
+    position: relative;
+  }
+  .ripple-underline::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -6px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-gold) 0%, transparent 100%);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+  .ripple-underline:hover::after {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
