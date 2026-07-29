@@ -38,14 +38,12 @@ export default function LoginPage() {
       const user = await login(usrCreds);
       // "/dashboard" doesn't exist as a route — send admins to the admin
       // panel and everyone else back to the site.
-      // navigate(user?.role === "admin" ? "/admin" : "/");
-      navigate("/admin");
+      navigate(user?.role === "admin" ? "/admin" : "/");
     } catch (err: unknown) {
       if (isAxiosError<ApiError>(err) && err.response?.data) {
         setErrorMessage(err.response.data.message || "Login failed");
       } else {
-        const e = err as ApiError;
-        setErrorMessage(e.message);
+        setErrorMessage("An unexpected error occurred. Please try again.");
       }
       console.error(err);
     } finally {

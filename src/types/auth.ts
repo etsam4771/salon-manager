@@ -17,7 +17,6 @@ export interface RegisterCredentials {
   role: 'admin' | 'customer';
 }
 export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
+  token: string;
   user?: User;
 }

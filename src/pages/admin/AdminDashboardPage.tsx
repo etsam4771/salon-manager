@@ -7,7 +7,7 @@ import {
 import { Link } from "react-router-dom";
 import StatCard from "../../components/admin/StatCard";
 import StatusPill from "../../components/admin/StatusPill";
-import { bookings } from "../../data/bookings";
+import { useSalonData } from "../../hooks/useSalonData";
 import { useAuth } from "../../hooks/useAuth";
 
 const stats = [
@@ -17,10 +17,10 @@ const stats = [
   { label: "Chair occupancy", value: "82%", icon: HiOutlineSparkles, delta: "4 rooms active" },
 ];
 
-const todaysBookings = bookings.filter((b) => b.date === "2026-07-29").slice(0, 5);
-
 export default function AdminDashboardPage() {
   const { user } = useAuth();
+  const { bookings } = useSalonData();
+  const todaysBookings = bookings.filter((b) => b.date === "2026-07-29").slice(0, 5);
 
   return (
     <div className="flex flex-col gap-8">
@@ -59,7 +59,7 @@ export default function AdminDashboardPage() {
                 {todaysBookings.map((b) => (
                   <tr key={b.id} className="border-b border-blush/30 last:border-0">
                     <td className="py-3.5 font-medium text-ink">{b.client}</td>
-                    <td className="py-3.5 text-ink/70">{b.service}</td>
+                    <td className="py-3.5 text-ink/70">{b.services.join(", ")}</td>
                     <td className="py-3.5 text-ink/70 font-mono">{b.time}</td>
                     <td className="py-3.5">
                       <StatusPill status={b.status} />

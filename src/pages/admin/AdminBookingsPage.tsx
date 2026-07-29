@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 import { HiOutlinePlus } from "react-icons/hi";
+import { Link } from "react-router-dom";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
 import SearchInput from "../../components/admin/SearchInput";
 import StatusPill from "../../components/admin/StatusPill";
 import Button from "../../components/ui/Button";
-import { bookings, type BookingStatus } from "../../data/bookings";
+import { useSalonData } from "../../hooks/useSalonData";
+import type { BookingStatus } from "../../data/bookings";
 
 const statusFilters: Array<BookingStatus | "All"> = [
   "All",
@@ -16,19 +18,21 @@ const statusFilters: Array<BookingStatus | "All"> = [
 ];
 
 export default function AdminBookingsPage() {
+  const { bookings } = useSalonData();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<(typeof statusFilters)[number]>("All");
 
   const filtered = useMemo(() => {
     return bookings.filter((b) => {
       const matchesStatus = status === "All" || b.status === status;
+      const servicesText = b.services.join(", ").toLowerCase();
       const matchesQuery =
         query.trim() === "" ||
         b.client.toLowerCase().includes(query.toLowerCase()) ||
-        b.service.toLowerCase().includes(query.toLowerCase());
+        servicesText.includes(query.toLowerCase());
       return matchesStatus && matchesQuery;
     });
-  }, [query, status]);
+  }, [bookings, query, status]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -36,9 +40,11 @@ export default function AdminBookingsPage() {
         title="Bookings"
         subtitle={`${bookings.length} appointments on the books`}
         action={
-          <Button size="sm" className="gap-1.5">
-            <HiOutlinePlus /> New booking
-          </Button>
+          <Link to="/admin/bookings/new">
+            <Button size="sm" className="gap-1.5">
+              <HiOutlinePlus /> New booking
+            </Button>
+          </Link>
         }
       />
 
@@ -72,7 +78,7 @@ export default function AdminBookingsPage() {
             <thead>
               <tr className="text-left text-ink/50 border-b border-blush/60 font-mono text-xs uppercase tracking-wide">
                 <th className="py-4 px-6 font-normal">Client</th>
-                <th className="py-4 px-6 font-normal">Service</th>
+                <th className="py-4 px-6 font-normal">Services</th>
                 <th className="py-4 px-6 font-normal">Stylist</th>
                 <th className="py-4 px-6 font-normal">Date</th>
                 <th className="py-4 px-6 font-normal">Time</th>
@@ -84,7 +90,7 @@ export default function AdminBookingsPage() {
               {filtered.map((b) => (
                 <tr key={b.id} className="border-b border-blush/30 last:border-0 hover:bg-sand/40">
                   <td className="py-3.5 px-6 font-medium text-ink">{b.client}</td>
-                  <td className="py-3.5 px-6 text-ink/70">{b.service}</td>
+                  <td className="py-3.5 px-6 text-ink/70">{b.services.join(", ")}</td>
                   <td className="py-3.5 px-6 text-ink/70">{b.stylist}</td>
                   <td className="py-3.5 px-6 text-ink/70 font-mono text-xs">{b.date}</td>
                   <td className="py-3.5 px-6 text-ink/70 font-mono text-xs">{b.time}</td>

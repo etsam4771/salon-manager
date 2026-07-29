@@ -11,17 +11,20 @@ import RegisterPage from './pages/RegisterPage'
 import AdminLayout from './components/layout/AdminLayout'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import AdminBookingsPage from './pages/admin/AdminBookingsPage'
+import AdminNewBookingPage from './pages/admin/AdminNewBookingPage'
 import AdminClientsPage from './pages/admin/AdminClientsPage'
 import AdminServicesPage from './pages/admin/AdminServicesPage'
 import AdminRevenuePage from './pages/admin/AdminRevenuePage'
 import AdminSettingsPage from './pages/admin/AdminSettingsPage'
 import { AuthProvider } from './store/AuthContext'
+import { SalonDataProvider } from './store/SalonDataContext'
 import ProtectedRoute from './routes/ProtectedRoute'
 
 function App() {
 
   return (
    <AuthProvider>
+    <SalonDataProvider>
     <BrowserRouter>
       <Routes>
         {/* Public site — shares Header + Footer */}
@@ -51,6 +54,7 @@ function App() {
         >
           <Route index element={<AdminDashboardPage />} />
           <Route path="bookings" element={<AdminBookingsPage />} />
+          <Route path="bookings/new" element={<AdminNewBookingPage />} />
           <Route path="clients" element={<AdminClientsPage />} />
           <Route path="services" element={<AdminServicesPage />} />
           <Route path="revenue" element={<AdminRevenuePage />} />
@@ -58,6 +62,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </SalonDataProvider>
    </AuthProvider>
   )
 }

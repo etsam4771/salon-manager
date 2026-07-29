@@ -3,7 +3,7 @@ import { HiOutlineMail, HiOutlinePhone } from "react-icons/hi";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
 import SearchInput from "../../components/admin/SearchInput";
 import StatusPill from "../../components/admin/StatusPill";
-import { clients } from "../../data/clients";
+import { useSalonData } from "../../hooks/useSalonData";
 
 function initials(name: string) {
   return name
@@ -15,6 +15,7 @@ function initials(name: string) {
 }
 
 export default function AdminClientsPage() {
+  const { clients } = useSalonData();
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(
@@ -25,7 +26,7 @@ export default function AdminClientsPage() {
           c.name.toLowerCase().includes(query.toLowerCase()) ||
           c.email.toLowerCase().includes(query.toLowerCase())
       ),
-    [query]
+    [clients, query]
   );
 
   return (
