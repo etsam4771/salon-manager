@@ -1,8 +1,54 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Logo from "../components/ui/Logo";
 import Button from "../components/ui/Button";
+import { useCallback, useState } from "react";
+import type { LoginCredentials } from "../types/auth";
+import { authService } from "../api/services/auth.service";
+import { isAxiosError } from "axios";
+import type { ApiError } from "../utils/response";
 
 export default function LoginPage() {
+  const [usrCreds, setUsrCreds] = useState<LoginCredentials>({
+    email: "",
+    password: "",
+  });
+
+  const [loading, setLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { id, value } = e.target;
+      setUsrCreds((prev) => ({
+        ...prev,
+        [id]: value,
+      }));
+    },
+    []
+  );
+
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setLoading(true);
+
+    try {
+      await authService.login(usrCreds);
+      navigate("/dashboard");
+    } catch (err: unknown) {
+      if (isAxiosError<ApiError>(err) && err.response?.data) {
+        setErrorMessage(err.response.data.message || "Login Failed failed");
+      } else {
+        setErrorMessage("An unexpected error occurred. Please try again.");
+      }
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-sand-light">
       <div className="hidden lg:flex flex-col justify-between bg-forest text-sand-light p-12">
@@ -33,7 +79,15 @@ export default function LoginPage() {
             Log in to manage your bookings and preferences.
           </p>
 
-          <form className="mt-8 flex flex-col gap-5" onSubmit={(e) => e.preventDefault()}>
+          <div className="mt-4 min-h-[48px]">
+            {errorMessage && (
+              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
+                {errorMessage}
+              </div>
+            )}
+          </div>
+
+          <form className="mt-8 flex flex-col gap-5" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="text-sm text-ink/70">
                 Email
@@ -41,6 +95,10 @@ export default function LoginPage() {
               <input
                 id="email"
                 type="email"
+                name="email"
+                value={usrCreds.email}
+                onChange={handleChange}
+                disabled={loading}
                 required
                 className="mt-2 w-full rounded-lg border border-blush px-4 py-3 text-sm outline-none focus:border-forest transition-colors"
                 placeholder="you@example.com"
@@ -58,6 +116,10 @@ export default function LoginPage() {
               <input
                 id="password"
                 type="password"
+                name="email"
+                value={usrCreds.password}
+                onChange={handleChange}
+                disabled={loading}
                 required
                 className="mt-2 w-full rounded-lg border border-blush px-4 py-3 text-sm outline-none focus:border-forest transition-colors"
                 placeholder="••••••••"

@@ -1,10 +1,10 @@
-import axios from "axios";
+import axios, { AxiosError, type AxiosResponse } from "axios";
 import { CONFIG } from "../utils/constants";
 import { apiEndpoints } from "./endpoint";
-import type { ApiError } from "../utils/response";
+import type { ApiError, ApiResponse } from "../utils/response";
 
 const api = axios.create({
-    baseURL: `${CONFIG.API_URL}/${apiEndpoints.prefix}`,
+    baseURL: `${CONFIG.API_URL+apiEndpoints.prefix}`,
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json'
@@ -25,12 +25,24 @@ api.interceptors.request.use(
 
 // Response Interceptor (e.g., handle global errors like 401 Unauthorized)
 api.interceptors.response.use(
-    (response) => response,
-    (error) => {
+    (response: AxiosResponse<ApiResponse>) => {
+        response.data.statusCode = response.status;
+        return response; // ✅ MUST return
+    },
+    (error: AxiosError) => {
         if (error.response?.status === 401) {
             localStorage.removeItem('token');
         }
-        const apiErrorData: ApiError | undefined = error.response?.data;
+
+        const err = error as AxiosError<ApiError>;
+
+        const apiErrorData: ApiError = {
+            success: err.response?.data?.success ?? false,
+            statusCode: err.response?.status ?? 500,
+            message: err.response?.data?.message ?? err.message,
+            data: err.response?.data?.data ?? null,
+        };
+
         return Promise.reject(apiErrorData || error);
     }
 )

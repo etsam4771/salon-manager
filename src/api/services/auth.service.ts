@@ -13,21 +13,16 @@ export const authService = {
         }
     },
     register: async (creds: RegisterCredentials): Promise<AuthResponse> => {
-        const response = await api.post<AuthResponse>(apiEndpoints.auth.login, creds);
+        const response = await api.post<AuthResponse>(apiEndpoints.auth.register, creds);
+        console.log(response);
         return response.data;
     },
-    getCurrentUser: async (): Promise<ApiResponse<User>> {
+    getCurrentUser: async (): Promise<ApiResponse<User>> => {
         return (await api.get<ApiResponse<User>>(apiEndpoints.user.get)).data
     },
     logout: async (creds: RegisterCredentials): Promise<ApiResponse<void>> => {
         const response = await api.post<ApiResponse<void>>(apiEndpoints.auth.login, creds);
         return response.data;
     },
-    logout: async (creds: RegisterCredentials): Promise<ApiResponse<void>> => {
-        const response = await api.post<ApiResponse<void>>(apiEndpoints.auth.login, creds);
-        return response.data;
-
-    },
-
 }
 
