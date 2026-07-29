@@ -4,6 +4,11 @@ import {
   HiOutlineUserAdd,
   HiOutlineSparkles,
 } from "react-icons/hi";
+import { Link } from "react-router-dom";
+import StatCard from "../../components/admin/StatCard";
+import StatusPill from "../../components/admin/StatusPill";
+import { bookings } from "../../data/bookings";
+import { useAuth } from "../../hooks/useAuth";
 
 const stats = [
   { label: "Today's bookings", value: "18", icon: HiOutlineCalendar, delta: "+3 vs yesterday" },
@@ -12,40 +17,22 @@ const stats = [
   { label: "Chair occupancy", value: "82%", icon: HiOutlineSparkles, delta: "4 rooms active" },
 ];
 
-const bookings = [
-  { client: "Priya Nair", service: "Signature Facial", time: "10:00 AM", status: "Confirmed" },
-  { client: "Rohan Kapoor", service: "Deep Tissue Massage", time: "11:15 AM", status: "In progress" },
-  { client: "Meera Sharma", service: "Keratin Smoothing", time: "12:30 PM", status: "Confirmed" },
-  { client: "Devika Rao", service: "Gel Manicure", time: "2:00 PM", status: "Pending" },
-  { client: "Kabir Sen", service: "Precision Haircut", time: "3:30 PM", status: "Confirmed" },
-];
-
-const statusStyles: Record<string, string> = {
-  Confirmed: "bg-forest/10 text-forest",
-  "In progress": "bg-gold/15 text-gold",
-  Pending: "bg-blush-dark/20 text-blush-dark",
-};
+const todaysBookings = bookings.filter((b) => b.date === "2026-07-29").slice(0, 5);
 
 export default function AdminDashboardPage() {
+  const { user } = useAuth();
+
   return (
     <div className="flex flex-col gap-8">
+      {user && (
+        <p className="text-sm text-ink/60 -mb-2">
+          Welcome back, <span className="text-ink font-medium">{user.name}</span>.
+        </p>
+      )}
+
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-5">
-        {stats.map(({ label, value, icon: Icon, delta }) => (
-          <div
-            key={label}
-            className="bg-sand-light rounded-2xl p-6 border border-blush/60 flex flex-col gap-4"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-ink/60">{label}</span>
-              <div className="w-9 h-9 rounded-full bg-sand flex items-center justify-center text-forest">
-                <Icon size={16} />
-              </div>
-            </div>
-            <div>
-              <p className="font-display text-3xl text-ink">{value}</p>
-              <p className="text-xs text-gold font-mono mt-1">{delta}</p>
-            </div>
-          </div>
+        {stats.map((s) => (
+          <StatCard key={s.label} {...s} />
         ))}
       </div>
 
@@ -53,7 +40,9 @@ export default function AdminDashboardPage() {
         <div className="lg:col-span-2 bg-sand-light rounded-2xl border border-blush/60 p-6 md:p-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-display text-xl text-ink">Today's bookings</h2>
-            <button className="text-sm text-forest font-medium ripple-underline">View all</button>
+            <Link to="/admin/bookings" className="text-sm text-forest font-medium ripple-underline">
+              View all
+            </Link>
           </div>
 
           <div className="overflow-x-auto">
@@ -67,15 +56,13 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {bookings.map((b) => (
-                  <tr key={b.client} className="border-b border-blush/30 last:border-0">
+                {todaysBookings.map((b) => (
+                  <tr key={b.id} className="border-b border-blush/30 last:border-0">
                     <td className="py-3.5 font-medium text-ink">{b.client}</td>
                     <td className="py-3.5 text-ink/70">{b.service}</td>
                     <td className="py-3.5 text-ink/70 font-mono">{b.time}</td>
                     <td className="py-3.5">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusStyles[b.status]}`}>
-                        {b.status}
-                      </span>
+                      <StatusPill status={b.status} />
                     </td>
                   </tr>
                 ))}

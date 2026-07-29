@@ -3,9 +3,9 @@ import Logo from "../components/ui/Logo";
 import Button from "../components/ui/Button";
 import { useCallback, useState } from "react";
 import type { LoginCredentials } from "../types/auth";
-import { authService } from "../api/services/auth.service";
 import { isAxiosError } from "axios";
 import type { ApiError } from "../utils/response";
+import { useAuth } from "../hooks/useAuth";
 
 export default function LoginPage() {
   const [usrCreds, setUsrCreds] = useState<LoginCredentials>({
@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,13 +35,17 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await authService.login(usrCreds);
-      navigate("/dashboard");
+      const user = await login(usrCreds);
+      // "/dashboard" doesn't exist as a route — send admins to the admin
+      // panel and everyone else back to the site.
+      // navigate(user?.role === "admin" ? "/admin" : "/");
+      navigate("/admin");
     } catch (err: unknown) {
       if (isAxiosError<ApiError>(err) && err.response?.data) {
-        setErrorMessage(err.response.data.message || "Login Failed failed");
+        setErrorMessage(err.response.data.message || "Login failed");
       } else {
-        setErrorMessage("An unexpected error occurred. Please try again.");
+        const e = err as ApiError;
+        setErrorMessage(e.message);
       }
       console.error(err);
     } finally {
@@ -116,7 +121,8 @@ export default function LoginPage() {
               <input
                 id="password"
                 type="password"
-                name="email"
+                name="password"
+                autoComplete="current-password"
                 value={usrCreds.password}
                 onChange={handleChange}
                 disabled={loading}

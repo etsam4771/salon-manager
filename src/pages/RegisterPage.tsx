@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Logo from "../components/ui/Logo";
 import Button from "../components/ui/Button";
 import { useState, useCallback } from "react";
@@ -6,7 +6,7 @@ import type { RegisterCredentials } from "../types/auth";
 import { authService } from "../api/services/auth.service";
 import { isAxiosError } from "axios";
 import type { ApiError } from "../utils/response";
-import RegisterSuccess from "../components/ui/success/LoginSuccess";
+import RegisterSuccess from "../components/ui/success/RegisterSuccess";
 
 export default function RegisterPage() {
   const [usrCreds, setUsrCreds] = useState<RegisterCredentials>({
@@ -19,8 +19,6 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [register, setRegister] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  // const navigate = useNavigate();
 
   // ✅ Optimized handler
   const handleChange = useCallback(

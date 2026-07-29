@@ -10,40 +10,55 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import AdminLayout from './components/layout/AdminLayout'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
-import AdminPlaceholderPage from './pages/admin/AdminPlaceholderPage'
-import Blanky from './pages/Blanky'
+import AdminBookingsPage from './pages/admin/AdminBookingsPage'
+import AdminClientsPage from './pages/admin/AdminClientsPage'
+import AdminServicesPage from './pages/admin/AdminServicesPage'
+import AdminRevenuePage from './pages/admin/AdminRevenuePage'
+import AdminSettingsPage from './pages/admin/AdminSettingsPage'
+import { AuthProvider } from './store/AuthContext'
+import ProtectedRoute from './routes/ProtectedRoute'
 
 function App() {
 
   return (
-   <BrowserRouter>
-    <Routes>
-      {/* Public Sie  shares Header + Footer*/}
-      <Route element={<SiteLayout />}>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/about" element={<AboutPage />} />
+   <AuthProvider>
+    <BrowserRouter>
+      <Routes>
+        {/* Public site — shares Header + Footer */}
+        <Route element={<SiteLayout />}>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/about" element={<AboutPage />} />
           <Route path="/services" element={<ServicesPage />} />
           <Route path="/contact" element={<ContactPage />} />
-          <Route path="/blank" element={<Blanky />} />
-      </Route>
+          {/* Was pointed at Blanky, a leftover dev test page with an
+              infinite re-render loop (setTimeout in a dep-less useEffect).
+              BlankPage is the actual intended empty-canvas page. */}
+          <Route path="/blank" element={<BlankPage />} />
+        </Route>
 
-      {/* Auth pages — own full-page layout */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+        {/* Auth pages — own full-page layout */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-      {/* Admin — shares Sidebar + Admin header */}
-      <Route path="/admin" element={<AdminLayout />}>
-        <Route index element={<AdminDashboardPage />} />
-        <Route path="bookings" element={<AdminPlaceholderPage title="Bookings" />} />
-        <Route path="clients" element={<AdminPlaceholderPage title="Clients" />} />
-        <Route path="services" element={<AdminPlaceholderPage title="Services" />} />
-        <Route path="revenue" element={<AdminPlaceholderPage title="Revenue" />} />
-        <Route path="settings" element={<AdminPlaceholderPage title="Settings" />} />
-      </Route>
-    </Routes>
-
-
-  </BrowserRouter>
+        {/* Admin — shares Sidebar + Admin header, now gated behind auth + role */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboardPage />} />
+          <Route path="bookings" element={<AdminBookingsPage />} />
+          <Route path="clients" element={<AdminClientsPage />} />
+          <Route path="services" element={<AdminServicesPage />} />
+          <Route path="revenue" element={<AdminRevenuePage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+   </AuthProvider>
   )
 }
 

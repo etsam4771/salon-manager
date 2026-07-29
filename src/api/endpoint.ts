@@ -16,7 +16,7 @@ export const apiEndpoints = Object.freeze({
     register: "/register",
     forgotPassword: "/change-password",
     refreshAceess: "/refresh-token",
-    logout: "logout",
+    logout: "/logout",
   },
   user: {
     get: "/current-user",

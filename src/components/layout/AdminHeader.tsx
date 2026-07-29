@@ -1,11 +1,24 @@
 import { HiOutlineMenu, HiOutlineBell, HiOutlineSearch } from "react-icons/hi";
+import { Link } from "react-router-dom";
+import { useAuth } from "../../hooks/useAuth";
 
 interface AdminHeaderProps {
   onMenuClick: () => void;
   title: string;
 }
 
+function initialsFor(name: string | undefined) {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
 export default function AdminHeader({ onMenuClick, title }: AdminHeaderProps) {
+  const { user } = useAuth();
   return (
     <header className="h-20 bg-sand-light/95 backdrop-blur-sm border-b border-blush sticky top-0 z-20 flex items-center justify-between px-6 md:px-10">
       <div className="flex items-center gap-4">
@@ -32,9 +45,13 @@ export default function AdminHeader({ onMenuClick, title }: AdminHeaderProps) {
           <HiOutlineBell size={20} />
           <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-gold" />
         </button>
-        <div className="w-9 h-9 rounded-full bg-forest text-sand-light flex items-center justify-center font-display text-sm">
-          AM
-        </div>
+        <Link
+          to="/admin/settings"
+          className="w-9 h-9 rounded-full bg-forest text-sand-light flex items-center justify-center font-display text-sm"
+          title={user?.name ?? "Account"}
+        >
+          {initialsFor(user?.name)}
+        </Link>
       </div>
     </header>
   );

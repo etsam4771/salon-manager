@@ -2,14 +2,14 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../Button";
 
-export default function RegisterSuccess() {
+export default function LoginSuccess() {
   const navigate = useNavigate();
 
-  // ✅ Auto redirect to login after 2.5s
+  // ✅ Auto redirect after 1.5s — login already knows where to send the user
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate("/login");
-    }, 2500);
+      navigate("/", { replace: true });
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, [navigate]);
@@ -17,8 +17,6 @@ export default function RegisterSuccess() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-sand-light px-4">
       <div className="bg-white shadow-lg rounded-2xl p-8 max-w-sm w-full text-center">
-
-        {/* ✅ Success Icon */}
         <div className="flex justify-center mb-4">
           <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
             <svg
@@ -37,23 +35,14 @@ export default function RegisterSuccess() {
           </div>
         </div>
 
-        {/* ✅ Title */}
-        <h2 className="text-xl font-semibold text-ink">
-          Account Created 🎉
-        </h2>
+        <h2 className="text-xl font-semibold text-ink">Welcome back 👋</h2>
 
-        {/* ✅ Description */}
         <p className="text-sm text-ink/60 mt-2">
-          Your account has been successfully created.
-          You can now log in and start booking.
+          You've successfully logged in. Redirecting you now.
         </p>
 
-        {/* ✅ Action Button */}
-        <Button
-          className="mt-6 w-full"
-          onClick={() => navigate("/login")}
-        >
-          Go to Login
+        <Button className="mt-6 w-full" onClick={() => navigate("/")}>
+          Continue
         </Button>
       </div>
     </div>
