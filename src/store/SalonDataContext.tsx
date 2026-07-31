@@ -2,9 +2,16 @@ import { createContext, useCallback, useEffect, useMemo, useState, type ReactNod
 import { bookings as seedBookings, type Booking, type BookingStatus } from "../data/bookings";
 import { clients as seedClients, type Client } from "../data/clients";
 import { services as allServices } from "../data/services";
+import { staff as seedStaff, type Staff, type StaffStatus } from "../data/staff";
+import { inventory as seedInventory, type InventoryItem } from "../data/inventory";
+import type { SalonProfile } from "../types/salon";
 
 const BOOKINGS_KEY = "salon:bookings";
 const CLIENTS_KEY = "salon:clients";
+const PROFILE_KEY = "salon:profile";
+const STAFF_KEY = "salon:staff";
+const INVENTORY_KEY = "salon:inventory";
+const SALES_KEY = "salon:sales";
 
 function loadOrSeed<T>(key: string, seed: T[]): T[] {
   try {
@@ -14,6 +21,15 @@ function loadOrSeed<T>(key: string, seed: T[]): T[] {
     // fall through to seed data
   }
   return seed;
+}
+
+function loadProfile(): SalonProfile | null {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    return raw ? (JSON.parse(raw) as SalonProfile) : null;
+  } catch {
+    return null;
+  }
 }
 
 export interface NewBookingInput {
@@ -27,10 +43,54 @@ export interface NewBookingInput {
   status: BookingStatus;
 }
 
+export interface SaleLine {
+  kind: "service" | "product";
+  refId: string;
+  name: string;
+  unitPrice: number;
+  qty: number;
+  stylist?: string;
+}
+
+export interface Sale {
+  id: string;
+  customerId?: string;
+  customerName: string;
+  lines: SaleLine[];
+  discountLabel: string;
+  subtotal: number;
+  discountAmount: number;
+  tax: number;
+  total: number;
+  paymentMethod: string;
+  createdAt: string;
+}
+
+export interface NewSaleInput {
+  customerId?: string;
+  customerName: string;
+  lines: SaleLine[];
+  discountLabel: string;
+  subtotal: number;
+  discountAmount: number;
+  tax: number;
+  total: number;
+  paymentMethod: string;
+}
+
 interface SalonDataContextValue {
   bookings: Booking[];
   clients: Client[];
   addBooking: (input: NewBookingInput) => Booking;
+  salonProfile: SalonProfile | null;
+  isOnboarded: boolean;
+  saveSalonProfile: (profile: SalonProfile) => void;
+  staff: Staff[];
+  updateStaffStatus: (id: string, status: StaffStatus) => void;
+  inventory: InventoryItem[];
+  adjustStock: (id: string, delta: number) => void;
+  sales: Sale[];
+  completeSale: (input: NewSaleInput) => Sale;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -47,6 +107,14 @@ function parsePrice(price: string) {
 export function SalonDataProvider({ children }: { children: ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>(() => loadOrSeed(BOOKINGS_KEY, seedBookings));
   const [clients, setClients] = useState<Client[]>(() => loadOrSeed(CLIENTS_KEY, seedClients));
+  const [staffList, setStaffList] = useState<Staff[]>(() => loadOrSeed(STAFF_KEY, seedStaff));
+  const [inventoryList, setInventoryList] = useState<InventoryItem[]>(() =>
+    loadOrSeed(INVENTORY_KEY, seedInventory)
+  );
+  const [sales, setSales] = useState<Sale[]>(() => loadOrSeed(SALES_KEY, []));
+  // null (not the demo default) until an owner actually completes onboarding —
+  // this is what lets the app tell "already set up" apart from "brand new tenant".
+  const [salonProfile, setSalonProfile] = useState<SalonProfile | null>(() => loadProfile());
 
   useEffect(() => {
     localStorage.setItem(BOOKINGS_KEY, JSON.stringify(bookings));
@@ -55,6 +123,40 @@ export function SalonDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients));
   }, [clients]);
+
+  useEffect(() => {
+    localStorage.setItem(STAFF_KEY, JSON.stringify(staffList));
+  }, [staffList]);
+
+  useEffect(() => {
+    localStorage.setItem(INVENTORY_KEY, JSON.stringify(inventoryList));
+  }, [inventoryList]);
+
+  useEffect(() => {
+    localStorage.setItem(SALES_KEY, JSON.stringify(sales));
+  }, [sales]);
+
+  useEffect(() => {
+    if (salonProfile) {
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(salonProfile));
+    }
+  }, [salonProfile]);
+
+  const saveSalonProfile = useCallback((profile: SalonProfile) => {
+    setSalonProfile(profile);
+  }, []);
+
+  const updateStaffStatus = useCallback((id: string, status: StaffStatus) => {
+    setStaffList((prev) => prev.map((s) => (s.id === id ? { ...s, status } : s)));
+  }, []);
+
+  const adjustStock = useCallback((id: string, delta: number) => {
+    setInventoryList((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item
+      )
+    );
+  }, []);
 
   const addBooking = useCallback(
     (input: NewBookingInput): Booking => {
@@ -122,9 +224,70 @@ export function SalonDataProvider({ children }: { children: ReactNode }) {
     [clients]
   );
 
+  const completeSale = useCallback((input: NewSaleInput): Sale => {
+    const sale: Sale = {
+      id: `sl-${Date.now()}`,
+      ...input,
+      createdAt: new Date().toISOString(),
+    };
+
+    setSales((prev) => [sale, ...prev]);
+
+    // Decrement stock for any product lines sold.
+    setInventoryList((prev) =>
+      prev.map((item) => {
+        const line = input.lines.find((l) => l.kind === "product" && l.refId === item.id);
+        return line ? { ...item, quantity: Math.max(0, item.quantity - line.qty) } : item;
+      })
+    );
+
+    // Bump the assigned client's stats, same as a booking would.
+    if (input.customerId) {
+      setClients((prev) =>
+        prev.map((c) =>
+          c.id === input.customerId
+            ? {
+                ...c,
+                visits: c.visits + 1,
+                lastVisit: sale.createdAt.slice(0, 10),
+                totalSpend: formatINR(parsePrice(c.totalSpend) + input.total),
+              }
+            : c
+        )
+      );
+    }
+
+    return sale;
+  }, []);
+
   const value = useMemo<SalonDataContextValue>(
-    () => ({ bookings, clients, addBooking }),
-    [bookings, clients, addBooking]
+    () => ({
+      bookings,
+      clients,
+      addBooking,
+      salonProfile,
+      isOnboarded: Boolean(salonProfile),
+      saveSalonProfile,
+      staff: staffList,
+      updateStaffStatus,
+      inventory: inventoryList,
+      adjustStock,
+      sales,
+      completeSale,
+    }),
+    [
+      bookings,
+      clients,
+      addBooking,
+      salonProfile,
+      saveSalonProfile,
+      staffList,
+      updateStaffStatus,
+      inventoryList,
+      adjustStock,
+      sales,
+      completeSale,
+    ]
   );
 
   return <SalonDataContext.Provider value={value}>{children}</SalonDataContext.Provider>;

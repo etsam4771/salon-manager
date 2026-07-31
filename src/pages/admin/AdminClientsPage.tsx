@@ -1,9 +1,13 @@
 import { useMemo, useState } from "react";
-import { HiOutlineMail, HiOutlinePhone } from "react-icons/hi";
+import { HiOutlineMail, HiOutlinePhone, HiOutlinePlus, HiOutlineUsers } from "react-icons/hi";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
 import SearchInput from "../../components/admin/SearchInput";
 import StatusPill from "../../components/admin/StatusPill";
+import EmptyState from "../../components/admin/EmptyState";
+import Button from "../../components/ui/Button";
 import { useSalonData } from "../../hooks/useSalonData";
+import AddClientModal from "../../components/admin/client/AddClientModal";
+import type { Client } from "../../types/salon";
 
 function initials(name: string) {
   return name
@@ -16,6 +20,7 @@ function initials(name: string) {
 
 export default function AdminClientsPage() {
   const { clients } = useSalonData();
+  const [newClientModal, setNewClientModal] = useState<boolean>(false);
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(
@@ -29,9 +34,21 @@ export default function AdminClientsPage() {
     [clients, query]
   );
 
+  const handleSaveClient = (clientData: Omit<Client, 'id'>) => {
+    // Handle saving client data (e.g., call API or update state)
+    console.log('New client to save:', clientData);
+
+    // Close modal after saving
+    setNewClientModal(false);
+  };
+
   return (
     <div className="flex flex-col gap-6">
-      <AdminPageHeader title="Clients" subtitle={`${clients.length} people in your client book`} />
+      <AdminPageHeader title="Clients" subtitle={`${clients.length} people in your client book`} action={
+        <Button size="sm" className="gap-1.5" onClick={() => setNewClientModal(true)}>
+          <HiOutlinePlus /> Add Client
+        </Button>
+      } />
 
       <SearchInput
         value={query}
@@ -39,12 +56,16 @@ export default function AdminClientsPage() {
         placeholder="Search by name or email…"
         className="w-full sm:w-80"
       />
-
+      <AddClientModal
+        isOpen={newClientModal}
+        onClose={() => setNewClientModal(false)}
+        onSave={handleSaveClient}
+      />
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
         {filtered.map((c) => (
           <div
             key={c.id}
-            className="bg-sand-light rounded-2xl border border-blush/60 p-6 flex flex-col gap-4"
+            className="bg-sand-light rounded-2xl border border-blush/60 p-6 flex flex-col gap-4 transition-transform hover:-translate-y-0.5"
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
@@ -86,8 +107,17 @@ export default function AdminClientsPage() {
         ))}
 
         {filtered.length === 0 && (
-          <div className="md:col-span-2 xl:col-span-3 text-center text-ink/50 py-12">
-            No clients match your search.
+          <div className="md:col-span-2 xl:col-span-3">
+            <EmptyState
+              icon={HiOutlineUsers}
+              title="No clients found"
+              subtitle="Try a different name or email."
+              action={
+                <Button size="sm" variant="secondary" onClick={() => setQuery("")}>
+                  Clear search
+                </Button>
+              }
+            />
           </div>
         )}
       </div>

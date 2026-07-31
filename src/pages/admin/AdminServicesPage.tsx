@@ -45,7 +45,7 @@ export default function AdminServicesPage() {
         {filtered.map((s) => (
           <div
             key={s.id}
-            className="bg-sand-light rounded-2xl border border-blush/60 p-6 flex flex-col gap-3"
+            className="bg-sand-light rounded-2xl border border-blush/60 p-6 flex flex-col gap-3 transition-transform hover:-translate-y-0.5"
           >
             <div className="flex items-start justify-between gap-4">
               <div>

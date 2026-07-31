@@ -5,6 +5,7 @@ import AdminPageHeader from "../../components/admin/AdminPageHeader";
 import SearchInput from "../../components/admin/SearchInput";
 import Button from "../../components/ui/Button";
 import { useSalonData } from "../../hooks/useSalonData";
+import { useToast } from "../../hooks/useToast";
 import { categories, services } from "../../data/services";
 import { stylists } from "../../data/stylists";
 import type { BookingStatus } from "../../data/bookings";
@@ -25,6 +26,7 @@ function formatINR(amount: number) {
 
 export default function AdminNewBookingPage() {
   const { clients, addBooking } = useSalonData();
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
   const [clientMode, setClientMode] = useState<ClientMode>("existing");
@@ -105,6 +107,7 @@ export default function AdminNewBookingPage() {
     });
 
     navigate("/admin/bookings");
+    showToast("Booking created.", "success");
   }
 
   return (

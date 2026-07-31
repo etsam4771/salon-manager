@@ -166,6 +166,16 @@ export default function RegisterPage() {
                 Log in
               </Link>
             </p>
+
+            <p className="mt-2 text-center text-sm text-ink/60">
+              Own a salon?{" "}
+              <Link
+                to="/onboard"
+                className="text-forest font-medium hover:underline"
+              >
+                Set up your business
+              </Link>
+            </p>
           </div>
         </div>
 

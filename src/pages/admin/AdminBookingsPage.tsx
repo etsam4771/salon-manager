@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { HiOutlinePlus } from "react-icons/hi";
+import { HiOutlinePlus, HiOutlineCalendar } from "react-icons/hi";
 import { Link } from "react-router-dom";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
 import SearchInput from "../../components/admin/SearchInput";
 import StatusPill from "../../components/admin/StatusPill";
+import EmptyState from "../../components/admin/EmptyState";
 import Button from "../../components/ui/Button";
 import { useSalonData } from "../../hooks/useSalonData";
 import type { BookingStatus } from "../../data/bookings";
@@ -102,8 +103,24 @@ export default function AdminBookingsPage() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-ink/50">
-                    No bookings match your search.
+                  <td colSpan={7}>
+                    <EmptyState
+                      icon={HiOutlineCalendar}
+                      title="No bookings found"
+                      subtitle="Try a different search or status filter."
+                      action={
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => {
+                            setQuery("");
+                            setStatus("All");
+                          }}
+                        >
+                          Clear filters
+                        </Button>
+                      }
+                    />
                   </td>
                 </tr>
               )}

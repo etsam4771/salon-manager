@@ -5,6 +5,7 @@ import { useAuth } from "../../hooks/useAuth";
 interface AdminHeaderProps {
   onMenuClick: () => void;
   title: string;
+  onSearchClick: () => void;
 }
 
 function initialsFor(name: string | undefined) {
@@ -17,7 +18,7 @@ function initialsFor(name: string | undefined) {
     .toUpperCase();
 }
 
-export default function AdminHeader({ onMenuClick, title }: AdminHeaderProps) {
+export default function AdminHeader({ onMenuClick, title, onSearchClick }: AdminHeaderProps) {
   const { user } = useAuth();
   return (
     <header className="h-20 bg-sand-light/95 backdrop-blur-sm border-b border-blush sticky top-0 z-20 flex items-center justify-between px-6 md:px-10">
@@ -33,14 +34,16 @@ export default function AdminHeader({ onMenuClick, title }: AdminHeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="hidden sm:flex items-center gap-2 bg-sand rounded-full px-4 py-2 w-64">
-          <HiOutlineSearch className="text-ink/40" />
-          <input
-            type="text"
-            placeholder="Search clients, bookings…"
-            className="bg-transparent outline-none text-sm w-full placeholder:text-ink/40"
-          />
-        </div>
+        <button
+          onClick={onSearchClick}
+          className="hidden sm:flex items-center gap-2 bg-sand rounded-full px-4 py-2 w-64 text-left"
+        >
+          <HiOutlineSearch className="text-ink/40 shrink-0" />
+          <span className="text-sm text-ink/40 flex-1">Search clients, bookings…</span>
+          <kbd className="text-[10px] font-mono text-ink/40 border border-ink/15 rounded px-1.5 py-0.5">
+            ⌘K
+          </kbd>
+        </button>
         <button className="relative text-ink/70 hover:text-forest" aria-label="Notifications">
           <HiOutlineBell size={20} />
           <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-gold" />

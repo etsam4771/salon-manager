@@ -46,7 +46,7 @@ export default function LandingPage() {
               length of your visit.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-4">
-              <Link to="/register">
+              <Link to="/book">
                 <Button size="lg">Book your visit</Button>
               </Link>
               <Link to="/services">
@@ -191,7 +191,7 @@ export default function LandingPage() {
           Your next hour of quiet is a few taps away.
         </h2>
         <div className="mt-8 flex justify-center">
-          <Link to="/register">
+          <Link to="/book">
             <Button size="lg">Reserve a time</Button>
           </Link>
         </div>

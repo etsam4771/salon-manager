@@ -39,11 +39,13 @@ export default function LoginPage() {
       // "/dashboard" doesn't exist as a route — send admins to the admin
       // panel and everyone else back to the site.
       navigate(user?.role === "admin" ? "/admin" : "/");
+      navigate("/admin");
     } catch (err: unknown) {
       if (isAxiosError<ApiError>(err) && err.response?.data) {
         setErrorMessage(err.response.data.message || "Login failed");
       } else {
-        setErrorMessage("An unexpected error occurred. Please try again.");
+        const e = err as ApiError;
+        setErrorMessage(e.message);
       }
       console.error(err);
     } finally {
@@ -139,6 +141,13 @@ export default function LoginPage() {
             New to Elanova?{" "}
             <Link to="/register" className="text-forest font-medium hover:underline">
               Create an account
+            </Link>
+          </p>
+
+          <p className="mt-2 text-center text-sm text-ink/60">
+            Own a salon?{" "}
+            <Link to="/onboard" className="text-forest font-medium hover:underline">
+              Set up your business
             </Link>
           </p>
         </div>

@@ -53,7 +53,7 @@ export default function Header() {
           <Link to="/login" className="font-body text-[15px] text-ink/70 hover:text-forest px-2">
             Log in
           </Link>
-          <Link to="/register">
+          <Link to="/book">
             <Button size="sm">Book a visit</Button>
           </Link>
         </div>
@@ -85,7 +85,7 @@ export default function Header() {
             <Link to="/login" onClick={() => setOpen(false)} className="text-ink/70">
               Log in
             </Link>
-            <Link to="/register" onClick={() => setOpen(false)}>
+            <Link to="/book" onClick={() => setOpen(false)}>
               <Button size="sm" className="w-full">
                 Book a visit
               </Button>

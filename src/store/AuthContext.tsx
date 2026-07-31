@@ -7,7 +7,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (creds: LoginCredentials) => Promise<User | undefined>;
-  register: (creds: RegisterCredentials) => Promise<void>;
+  register: (creds: RegisterCredentials) => Promise<User | undefined>;
   logout: () => Promise<void>;
 }
 
@@ -72,7 +72,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(async (creds: RegisterCredentials) => {
-    await authService.register(creds);
+    const res = await authService.register(creds);
+    if (res.user) setUser(res.user);
+    return res.user;
   }, []);
 
   const logout = useCallback(async () => {

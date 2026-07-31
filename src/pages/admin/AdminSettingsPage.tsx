@@ -4,24 +4,30 @@ import { useNavigate } from "react-router-dom";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
 import Button from "../../components/ui/Button";
 import { useAuth } from "../../hooks/useAuth";
+import { useSalonData } from "../../hooks/useSalonData";
+import { useToast } from "../../hooks/useToast";
+import { defaultSalonProfile } from "../../types/salon";
 
 export default function AdminSettingsPage() {
   const { user, logout } = useAuth();
+  const { salonProfile, saveSalonProfile } = useSalonData();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const [loggingOut, setLoggingOut] = useState(false);
 
-  const [salonName, setSalonName] = useState("Elanova");
-  const [openTime, setOpenTime] = useState("09:00");
-  const [closeTime, setCloseTime] = useState("20:00");
+  const profile = salonProfile ?? defaultSalonProfile;
+  const [salonName, setSalonName] = useState(profile.name);
+  const [openTime, setOpenTime] = useState(profile.openTime);
+  const [closeTime, setCloseTime] = useState(profile.closeTime);
   const [notifyBookings, setNotifyBookings] = useState(true);
   const [notifyCancellations, setNotifyCancellations] = useState(true);
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    // No settings endpoint exists yet — persisting locally so the form
-    // is fully wired once the backend route is available.
+    saveSalonProfile({ ...profile, name: salonName, openTime, closeTime });
     setSavedAt(new Date().toLocaleTimeString());
+    showToast("Settings saved.", "success");
   };
 
   const handleLogout = async () => {

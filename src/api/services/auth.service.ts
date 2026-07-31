@@ -5,34 +5,29 @@ import { apiEndpoints } from "../endpoint";
 
 export const authService = {
   login: async (creds: LoginCredentials): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>(apiEndpoints.auth.login, creds);
-    const { token, user } = response.data;
+    const response = await api.post<ApiResponse<AuthResponse>>(apiEndpoints.auth.login, creds);
+    console.log(response);
+    const { accessToken, refreshToken, user } = response.data.data;
 
     // Persist the token so the axios request interceptor can attach it —
     // this step was previously missing, so every authenticated request
     // after login/register failed silently (no Authorization header).
-    if (token) {
-      localStorage.setItem("token", token);
-    }
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
-    }
+    accessToken != null ? localStorage.setItem("accessToken", accessToken) : null;
+    refreshToken != null ? localStorage.setItem("refreshToken", refreshToken) : null;
+    user != null ? localStorage.setItem("user", JSON.stringify(user)) : null;
 
-    return response.data;
+    return response.data.data;
   },
 
   register: async (creds: RegisterCredentials): Promise<AuthResponse> => {
-    const response = await api.post<AuthResponse>(apiEndpoints.auth.register, creds);
-    const { token, user } = response.data;
+    const response = await api.post<ApiResponse<AuthResponse>>(apiEndpoints.auth.register, creds);
+    const { accessToken, refreshToken, user } = response.data.data;
 
-    if (token) {
-      localStorage.setItem("token", token);
-    }
-    if (user) {
-      localStorage.setItem("user", JSON.stringify(user));
-    }
+    accessToken != null ? localStorage.setItem("accessToken", accessToken) : null;
+    refreshToken != null ? localStorage.setItem("refreshToken", refreshToken) : null;
+    user != null ? localStorage.setItem("user", JSON.stringify(user)) : null;
 
-    return response.data;
+    return response.data.data;
   },
 
   getCurrentUser: async (): Promise<ApiResponse<User>> => {
