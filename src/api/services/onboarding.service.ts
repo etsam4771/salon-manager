@@ -1,6 +1,7 @@
 import type { BusinessModel, SubType } from "../../types/gloable.types";
 import type {
   AttendancePolicyRequest,
+  OnboardingProgress,
   ServiceCategory,
   ServiceCategoryCreateRequest,
   ServiceCreateRequest,
@@ -24,8 +25,8 @@ export const onboardingService = {
   getTenantServiceCategories: async (): Promise<ApiResponse<ServiceCategory[]>> =>
     (await api.get<ApiResponse<ServiceCategory[]>>("/tenants/service-categories")).data,
 
-  createServiceCategory: async (payload: ServiceCategoryCreateRequest): Promise<ApiResponse<null>> =>
-    (await api.post<ApiResponse<null>>("/tenants/service-category", payload)).data,
+  createServiceCategory: async (payload: ServiceCategoryCreateRequest): Promise<ApiResponse<ServiceCategory>> =>
+    (await api.post<ApiResponse<ServiceCategory>>("/tenants/service-category", payload)).data,
 
   createService: async (payload: ServiceCreateRequest): Promise<ApiResponse<unknown>> =>
     (await api.post<ApiResponse<unknown>>("/services", payload)).data,
@@ -50,6 +51,8 @@ export const onboardingService = {
 
   getBranches: async (): Promise<ApiResponse<Branch[]>> =>
     (await api.get<ApiResponse<Branch[]>>("/tenants/branches")).data,
+  getOnboardingProgress: async (branchId: string): Promise<ApiResponse<OnboardingProgress>> =>
+    (await api.get<ApiResponse<OnboardingProgress>>(`/tenants/onboard-progress?branchId=${branchId}`)).data,
   getBranchesBusinessModels: async (branchId: string): Promise<ApiResponse<BusinessModel[]>> =>
     (await api.get<ApiResponse<BusinessModel[]>>(`/tenants/branch/business-models?branchId=${branchId}`)).data,
   getBranchesBusinessSubModel: async (branchId: string): Promise<ApiResponse<SubType[]>> =>

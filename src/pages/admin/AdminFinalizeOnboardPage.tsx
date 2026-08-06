@@ -33,12 +33,14 @@ import type {
   StaffingOnboardRequest,
   TaxRegime,
 } from "../../types/onboarding";
-import type { Branch, EmploymentStatus, EmploymentType, UserRole } from "../../types/salon";
+import type { EmploymentStatus, EmploymentType, UserRole } from "../../types/salon";
 import type { ApiError } from "../../utils/response";
 
 const STEPS_KEY = "salon:finalize_steps";
 const PROFILE_KEY = "salon:finalize_profile";
 
+// Progress is driven by GET /tenants/onboard-progress (25% per step). The
+// localStorage list is only a fallback when the endpoint is unavailable.
 const STEP_DEFS = [
   { id: "profile", label: "Profile", title: "Complete your profile", hint: "Business & owner photos" },
   { id: "categories", label: "Categories", title: "Service categories", hint: "Pick or create categories" },
@@ -338,13 +340,16 @@ export default function AdminFinalizeOnboardPage() {
     }
   });
 
-  const [branchSubModel, setBranchSubModel] = useState<SubType[]>([]);
+  const [branchModels, setBranchModels] = useState<BusinessModel[]>([]);
+  const [branchSubModels, setBranchSubModels] = useState<SubType[]>([]);
   const [globalCategories, setGlobalCategories] = useState<ServiceCategory[]>([]);
   const [tenantCategories, setTenantCategories] = useState<ServiceCategory[]>([]);
   const [branches, setBranches] = useState<{ id: string; name: string; branchCode?: string }[]>([]);
-  const [workingBranch, setWorkingBranch] = useState<Branch | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
+  // Server-reported completion % from /tenants/onboard-progress. While null
+  // (loading or endpoint unavailable) the bar falls back to local tracking.
+  const [apiProgress, setApiProgress] = useState<number | null>(null);
 
   const [selectedGlobalIds, setSelectedGlobalIds] = useState<number[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -370,15 +375,26 @@ export default function AdminFinalizeOnboardPage() {
   const stepId = STEP_DEFS[stepIndex].id;
   const subtypeOptions = useMemo(
     () =>
-      branchSubModel.map((item) => ({
-        id: item.id,
-        name: `${item.name}`,
-      })),
-    [branchSubModel]
+      branchSubModels
+        .map((item) => ({
+          id: item.id,
+          name: `${item.name}`,
+        })),
+    [branchSubModels]
   );
   const allCategories = useMemo(
-    () => [...globalCategories.map((c) => ({ ...c, origin: "global" as const })), ...tenantCategories.map((c) => ({ ...c, origin: "custom" as const }))],
-    [globalCategories, tenantCategories]
+    () =>
+      [
+        ...globalCategories.map((c) => ({ ...c, origin: "global" as const })),
+        ...tenantCategories.map((c) => ({ ...c, origin: "custom" as const })),
+      ].filter((item) =>
+        branchSubModels.some(
+          (subModel) =>
+            subModel.businessModelId === Number(serviceDraft.businessModelId) &&
+            subModel.id === item.subtypeId
+        )
+      ),
+    [globalCategories, tenantCategories, serviceDraft.businessModelId, branchSubModels]
   );
   const isComplete = completedSteps.length === STEP_DEFS.length;
 
@@ -390,10 +406,30 @@ export default function AdminFinalizeOnboardPage() {
         onboardingService.getBranches().catch(() => null),
       ]);
       const selectedBranch = branchRes?.data.at(0) ?? null;
-      setWorkingBranch(selectedBranch);
       if (selectedBranch) {
         const subModel = await onboardingService.getBranchesBusinessSubModel(selectedBranch.id);
-        setBranchSubModel(subModel.data);
+        const bmodel = await onboardingService.getBranchesBusinessModels(selectedBranch.id);
+        setBranchSubModels(subModel.data);
+        setBranchModels(bmodel.data)
+        try {
+          const prog = await onboardingService.getOnboardingProgress(selectedBranch.id);
+          const { progress, currentStep } = prog.data;
+          setApiProgress(progress);
+          const currentIdx = STEP_DEFS.findIndex((s) => s.id === currentStep);
+          if (progress >= 100 || currentIdx === -1) {
+            // Backend considers the wizard done (or uses an unknown step
+            // label) — treat every step as completed.
+            setCompletedSteps(STEP_DEFS.map((s) => s.id));
+            setStepIndex(0);
+          } else {
+            // Steps strictly before the current one are done; land the
+            // user on the step the backend says they're on.
+            setCompletedSteps(STEP_DEFS.slice(0, currentIdx).map((s) => s.id));
+            setStepIndex(currentIdx);
+          }
+        } catch {
+          // Progress endpoint is optional — keep local tracking.
+        }
       }
       setGlobalCategories(globals.data);
       if (tenantCats) setTenantCategories(tenantCats.data);
@@ -422,7 +458,13 @@ export default function AdminFinalizeOnboardPage() {
   const activeBranchId = attendance.branchId || branches[0]?.id || "";
 
   const markComplete = (id: StepId) => {
-    setCompletedSteps((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    if (completedSteps.includes(id)) return;
+    setCompletedSteps((prev) => [...prev, id]);
+    // Server doesn't expose a "mark step done" call, so bump the bar
+    // locally by one step's share on top of the reported percentage.
+    if (apiProgress !== null) {
+      setApiProgress((p) => Math.min((p ?? 0) + 25, 100));
+    }
   };
 
   const goNext = () => {
@@ -726,7 +768,7 @@ export default function AdminFinalizeOnboardPage() {
     }
   };
 
-  const progress = Math.round((completedSteps.length / STEP_DEFS.length) * 100);
+  const progress = apiProgress ?? Math.round((completedSteps.length / STEP_DEFS.length) * 100);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sand-light to-white">
@@ -997,8 +1039,8 @@ export default function AdminFinalizeOnboardPage() {
                         }
                         className={`${inputCls} bg-white`}
                       >
-                        <option value="">Select business sub model</option>
-                        {branchSubModel.map((m) => (
+                        <option value="">Select business model</option>
+                        {branchModels.map((m) => (
                           <option key={m.id} value={m.id}>
                             {m.name}
                           </option>
@@ -1116,42 +1158,59 @@ export default function AdminFinalizeOnboardPage() {
                       <div className="space-y-4">
                         {serviceDraft.variations.map((group, gi) => (
                           <div key={gi} className="rounded-xl border border-blush/60 p-4 bg-sand-light/40">
-                            <div className="flex items-center gap-3 mb-3">
-                              <input
-                                value={group.name}
-                                onChange={(e) => updateVariationGroup(gi, { name: e.target.value })}
-                                placeholder="Group name (e.g. Duration)"
-                                className={`${inputCls} flex-1`}
-                              />
-                              <select
-                                value={group.selectionType}
-                                onChange={(e) =>
-                                  updateVariationGroup(gi, {
-                                    selectionType: e.target.value as "single" | "multiple",
-                                  })
-                                }
-                                className={`${inputCls} w-40 bg-white`}
-                              >
-                                <option value="single">Single choice</option>
-                                <option value="multiple">Multiple choice</option>
-                              </select>
+                            <div className="grid sm:grid-cols-[1fr_220px_auto] gap-3 mb-4">
+                              <div>
+                                <label className="text-xs font-medium text-ink/60 block mb-1">
+                                  Group name
+                                </label>
+                                <input
+                                  value={group.name}
+                                  onChange={(e) => updateVariationGroup(gi, { name: e.target.value })}
+                                  placeholder="e.g. Duration"
+                                  className={inputCls}
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium text-ink/60 block mb-1">
+                                  Selection type
+                                </label>
+                                <select
+                                  value={group.selectionType}
+                                  onChange={(e) =>
+                                    updateVariationGroup(gi, {
+                                      selectionType: e.target.value as "single" | "multiple",
+                                    })
+                                  }
+                                  className={`${inputCls} bg-white`}
+                                >
+                                  <option value="single">Single choice</option>
+                                  <option value="multiple">Multiple choice</option>
+                                </select>
+                              </div>
                               <button
                                 type="button"
                                 onClick={() => removeVariationGroup(gi)}
-                                className="text-ink/40 hover:text-red-500 shrink-0"
+                                className="text-ink/40 hover:text-red-500 shrink-0 self-end mb-1 py-2.5"
                                 aria-label="Remove group"
                               >
                                 <HiOutlineTrash size={16} />
                               </button>
                             </div>
 
+                            <div className="grid grid-cols-[1fr_140px_140px_auto] gap-2 items-center mb-1.5 text-xs font-medium text-ink/50">
+                              <span>Option name</span>
+                              <span>Price modifier (₹)</span>
+                              <span>Duration modifier (min)</span>
+                              <span />
+                            </div>
+
                             <div className="space-y-2">
                               {group.variations.map((v, vi) => (
-                                <div key={vi} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
+                                <div key={vi} className="grid grid-cols-[1fr_140px_140px_auto] gap-2 items-center">
                                   <input
                                     value={v.name}
                                     onChange={(e) => updateVariation(gi, vi, { name: e.target.value })}
-                                    placeholder="Option name (e.g. 45 min)"
+                                    placeholder="e.g. 45 min"
                                     className={inputCls}
                                   />
                                   <input
@@ -1160,7 +1219,7 @@ export default function AdminFinalizeOnboardPage() {
                                     onChange={(e) =>
                                       updateVariation(gi, vi, { priceModifier: e.target.value })
                                     }
-                                    placeholder="+₹ price"
+                                    placeholder="+100"
                                     className={inputCls}
                                   />
                                   <input
@@ -1169,7 +1228,7 @@ export default function AdminFinalizeOnboardPage() {
                                     onChange={(e) =>
                                       updateVariation(gi, vi, { durationModifier: e.target.value })
                                     }
-                                    placeholder="+mins"
+                                    placeholder="+15"
                                     className={inputCls}
                                   />
                                   <button
@@ -1188,7 +1247,7 @@ export default function AdminFinalizeOnboardPage() {
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className="mt-2 gap-1"
+                              className="mt-3 gap-1"
                               onClick={() => addVariation(gi)}
                             >
                               <HiOutlinePlus size={13} /> Add option

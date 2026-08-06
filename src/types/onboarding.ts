@@ -126,3 +126,9 @@ export interface TenantImagesRequest {
   logo: File;
   ownerImage: File;
 }
+
+export interface OnboardingProgress {
+  progress: number;
+  currentStep: string;
+  nextStep: string;
+}
