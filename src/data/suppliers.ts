@@ -1,14 +1,52 @@
-export interface Supplier {
-  id: string;
-  name: string;
-  contactPerson: string;
-  phone: string;
-  categories: string[];
-}
+import type { Supplier } from "../types/salon";
 
 export const suppliers: Supplier[] = [
-  { id: "sp-01", name: "Lumière Haircare Co.", contactPerson: "Rahul Mehta", phone: "+91 98100 22334", categories: ["Hair"] },
-  { id: "sp-02", name: "PureSkin Distributors", contactPerson: "Anjali Kulkarni", phone: "+91 98100 55667", categories: ["Skin"] },
-  { id: "sp-03", name: "Bloom Nail Supplies", contactPerson: "Vikram Shah", phone: "+91 98100 88990", categories: ["Nails"] },
-  { id: "sp-04", name: "SpaEssentials India", contactPerson: "Neha Joshi", phone: "+91 98100 11223", categories: ["Spa", "Tools"] },
+  {
+    id: "sup-01",
+    tenantId: "tn-01",
+    name: "Lakme Professional",
+    contactPerson: "Ritu Desai",
+    phone: "+91 98700 12345",
+    email: "orders@lakmepro-dist.example",
+    gstNumber: "27AAAPL1234C1Z5",
+    paymentTerms: "Net 30",
+    categories: ["Hair", "Skin"],
+    isActive: true,
+  },
+  {
+    id: "sup-02",
+    tenantId: "tn-01",
+    name: "L'Oreal Professionnel",
+    contactPerson: "Sameer Joshi",
+    phone: "+91 98700 22456",
+    email: "b2b@lorealpro-dist.example",
+    gstNumber: "27AABCL5678D1Z2",
+    paymentTerms: "Net 15",
+    categories: ["Hair"],
+    isActive: true,
+  },
+  {
+    id: "sup-03",
+    tenantId: "tn-01",
+    name: "OPI Nail Supplies",
+    contactPerson: "Neel Kulkarni",
+    phone: "+91 98700 33567",
+    email: "sales@opi-dist.example",
+    gstNumber: "27AABCO9012E1Z9",
+    paymentTerms: "Net 30",
+    categories: ["Nails"],
+    isActive: true,
+  },
+  {
+    id: "sup-04",
+    tenantId: "tn-01",
+    name: "Forest Essentials",
+    contactPerson: "Anjali Menon",
+    phone: "+91 98700 44678",
+    email: "wholesale@forestessentials-dist.example",
+    gstNumber: "27AABCF3456F1Z6",
+    paymentTerms: "Net 45",
+    categories: ["Skin", "Body"],
+    isActive: true,
+  },
 ];

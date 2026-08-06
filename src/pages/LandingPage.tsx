@@ -3,6 +3,7 @@ import { services } from "../data/services";
 import Button from "../components/ui/Button";
 import { HiOutlineArrowRight } from "react-icons/hi";
 import WaveDivider from "../components/ui/WaveDivider";
+import { formatCurrency } from "../utils/format";
 import Section from "../components/ui/Section";
 
 const featured = services.slice(0, 3);
@@ -145,13 +146,13 @@ export default function LandingPage() {
               }`}
             >
               <span className="font-mono text-xs uppercase tracking-wide text-gold">
-                {s.category}
+                {s.categoryName}
               </span>
               <h3 className="font-display text-xl text-ink mt-3">{s.name}</h3>
               <p className="text-sm text-ink/60 mt-3 leading-relaxed">{s.description}</p>
               <div className="flex items-center justify-between mt-6 text-sm">
-                <span className="text-ink/50">{s.duration}</span>
-                <span className="font-display text-forest text-lg">{s.price}</span>
+                <span className="text-ink/50">{s.durationMins} min</span>
+                <span className="font-display text-forest text-lg">{formatCurrency(s.price)}</span>
               </div>
             </div>
           ))}

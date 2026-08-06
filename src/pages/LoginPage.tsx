@@ -35,10 +35,10 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const user = await login(usrCreds);
+      await login(usrCreds);
       // "/dashboard" doesn't exist as a route — send admins to the admin
       // panel and everyone else back to the site.
-      navigate(user?.role === "admin" ? "/admin" : "/");
+      // navigate(user?.role === "admin" ? "/admin" : "/");
       navigate("/admin");
     } catch (err: unknown) {
       if (isAxiosError<ApiError>(err) && err.response?.data) {

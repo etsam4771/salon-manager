@@ -1,36 +1,30 @@
-export interface MonthlyRevenue {
-  month: string;
-  amount: number;
-}
-
-export const monthlyRevenue: MonthlyRevenue[] = [
-  { month: "Feb", amount: 412000 },
-  { month: "Mar", amount: 468000 },
-  { month: "Apr", amount: 439000 },
-  { month: "May", amount: 512000 },
-  { month: "Jun", amount: 561000 },
-  { month: "Jul", amount: 598000 },
-];
-
-export interface CategoryRevenue {
-  category: string;
-  amount: string;
-  pct: number;
-}
-
-export const revenueByCategory: CategoryRevenue[] = [
-  { category: "Skin", amount: "₹1,84,200", pct: 31 },
-  { category: "Hair", amount: "₹1,52,600", pct: 25 },
-  { category: "Body", amount: "₹1,21,800", pct: 20 },
-  { category: "Nails", amount: "₹86,400", pct: 14 },
-  { category: "Packages", amount: "₹53,000", pct: 10 },
-];
+// Aggregate reporting numbers. In a real backend these are rollups over
+// Invoice/Payment (monthToDate, avgTicket) and InvoiceItem grouped by the
+// linked Service's ServiceCategory (revenueByCategory) — kept as static
+// mock aggregates here since there's no query layer yet.
 
 export const revenueStats = {
-  monthToDate: "₹5,98,000",
-  monthDelta: "+12.3% vs June",
-  avgTicket: "₹2,640",
-  avgTicketDelta: "+6.1% vs June",
-  outstanding: "₹18,400",
-  outstandingNote: "4 unpaid invoices",
+  monthToDate: 486200,
+  monthDelta: "+12.4% vs last month",
+  avgTicket: 2340,
+  avgTicketDelta: "+3.1% vs last month",
+  outstanding: 18400,
+  outstandingNote: "6 unpaid invoices",
 };
+
+export const monthlyRevenue: { month: string; amount: number }[] = [
+  { month: "Mar", amount: 342000 },
+  { month: "Apr", amount: 368500 },
+  { month: "May", amount: 391200 },
+  { month: "Jun", amount: 405800 },
+  { month: "Jul", amount: 432900 },
+  { month: "Aug", amount: 486200 },
+];
+
+export const revenueByCategory: { category: string; amount: number; pct: number }[] = [
+  { category: "Hair", amount: 186400, pct: 38 },
+  { category: "Skin", amount: 121600, pct: 25 },
+  { category: "Body", amount: 92400, pct: 19 },
+  { category: "Nails", amount: 58300, pct: 12 },
+  { category: "Packages", amount: 27500, pct: 6 },
+];

@@ -1,54 +1,75 @@
-export type StaffStatus = "Active" | "On Break" | "Off-duty";
+import type { StaffMember } from "../types/salon";
 
-export interface Staff {
-  id: string;
-  name: string;
-  role: string;
-  status: StaffStatus;
-  servicesAssigned: string[];
-  commissionRate: number; // e.g. 0.15 = 15%
-  bookingsCompleted: number;
-  revenueGenerated: number; // raw rupees, no formatting
-}
-
-export const staff: Staff[] = [
+export const staff: StaffMember[] = [
   {
     id: "st-01",
-    name: "Ananya",
-    role: "Senior Stylist",
+    userId: "usr-01",
+    fullName: "Ananya",
+    employeeCode: "EMP-001",
+    designation: "Senior Stylist",
+    roleGroup: "hairTeam",
     status: "Active",
-    servicesAssigned: ["Precision Haircut & Style", "Keratin Smoothing"],
-    commissionRate: 0.18,
+    employmentType: "service_based",
+    employmentStatus: "active",
+    skills: ["Precision Haircut & Style", "Keratin Smoothing"],
+    serviceIds: ["classic-haircut", "keratin"],
+    commissionPct: 18,
+    ratingAvg: 4.8,
+    joinedOn: "2023-02-14",
     bookingsCompleted: 142,
     revenueGenerated: 386400,
   },
   {
     id: "st-02",
-    name: "Kabir",
-    role: "Massage Therapist",
+    userId: "usr-02",
+    fullName: "Kabir",
+    employeeCode: "EMP-002",
+    designation: "Massage Therapist",
+    roleGroup: "bodyWellness",
     status: "Active",
-    servicesAssigned: ["Deep Tissue Massage", "Hot Stone Therapy"],
-    commissionRate: 0.15,
+    employmentType: "service_based",
+    employmentStatus: "active",
+    skills: ["Deep Tissue Massage", "Hot Stone Therapy"],
+    serviceIds: ["deep-tissue", "hot-stone"],
+    commissionPct: 15,
+    ratingAvg: 4.7,
+    joinedOn: "2023-06-01",
     bookingsCompleted: 98,
     revenueGenerated: 298700,
   },
   {
     id: "st-03",
-    name: "Divya",
-    role: "Hair Specialist",
+    userId: "usr-03",
+    fullName: "Divya",
+    employeeCode: "EMP-003",
+    designation: "Hair Specialist",
+    roleGroup: "hairTeam",
     status: "On Break",
-    servicesAssigned: ["Keratin Smoothing", "Bridal Glow Package"],
-    commissionRate: 0.2,
+    employmentType: "service_based",
+    employmentStatus: "active",
+    skills: ["Keratin Smoothing", "Bridal Glow Package"],
+    serviceIds: ["keratin", "bridal-package"],
+    commissionPct: 20,
+    ratingAvg: 4.9,
+    joinedOn: "2022-11-20",
     bookingsCompleted: 76,
     revenueGenerated: 412300,
   },
   {
     id: "st-04",
-    name: "Ishani",
-    role: "Nail Artist",
+    userId: "usr-04",
+    fullName: "Ishani",
+    employeeCode: "EMP-004",
+    designation: "Nail Artist",
+    roleGroup: "nailCare",
     status: "Off-duty",
-    servicesAssigned: ["Gel Manicure", "Restorative Pedicure"],
-    commissionRate: 0.12,
+    employmentType: "service_based",
+    employmentStatus: "active",
+    skills: ["Gel Manicure", "Restorative Pedicure"],
+    serviceIds: ["gel-manicure", "pedicure-ritual"],
+    commissionPct: 12,
+    ratingAvg: 4.6,
+    joinedOn: "2024-01-08",
     bookingsCompleted: 121,
     revenueGenerated: 156900,
   },

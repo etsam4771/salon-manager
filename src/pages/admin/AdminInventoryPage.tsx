@@ -5,12 +5,12 @@ import SearchInput from "../../components/admin/SearchInput";
 import Skeleton from "../../components/admin/Skeleton";
 import EmptyState from "../../components/admin/EmptyState";
 import Button from "../../components/ui/Button";
-import { stockStatus, type InventoryItem, type StockStatus } from "../../data/inventory";
+import { categoryNames } from "../../data/services";
 import { suppliers } from "../../data/suppliers";
 import { useSalonData } from "../../hooks/useSalonData";
 import { useToast } from "../../hooks/useToast";
-
-const CATEGORIES = ["All", "Hair", "Skin", "Nails", "Spa", "Tools"];
+import type { Product, StockStatus } from "../../types/salon";
+import { stockStatus } from "../../utils/inventory";
 
 const statusStyles: Record<StockStatus, string> = {
   "In Stock": "bg-forest/10 text-forest",
@@ -19,7 +19,7 @@ const statusStyles: Record<StockStatus, string> = {
 };
 
 export default function AdminInventoryPage() {
-  const { inventory, adjustStock } = useSalonData();
+  const { products, adjustStock } = useSalonData();
   const { showToast } = useToast();
 
   // Genuinely simulated slow-network state to demonstrate the skeleton pattern.
@@ -31,27 +31,28 @@ export default function AdminInventoryPage() {
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
-  const [adjustingItem, setAdjustingItem] = useState<InventoryItem | null>(null);
+  const [adjustingItem, setAdjustingItem] = useState<Product | null>(null);
   const [delta, setDelta] = useState(0);
 
   const filtered = useMemo(
     () =>
-      inventory.filter((i) => {
-        const matchesCategory = category === "All" || i.category === category;
+      products.filter((p) => {
+        const matchesCategory = category === "All" || p.categoryName === category;
         const q = query.trim().toLowerCase();
-        const matchesQuery = q === "" || i.name.toLowerCase().includes(q) || i.sku.toLowerCase().includes(q);
+        const matchesQuery =
+          q === "" || p.name.toLowerCase().includes(q) || (p.sku ?? "").toLowerCase().includes(q);
         return matchesCategory && matchesQuery;
       }),
-    [inventory, query, category]
+    [products, query, category]
   );
 
-  const lowStockCount = inventory.filter((i) => stockStatus(i) !== "In Stock").length;
+  const lowStockCount = products.filter((p) => stockStatus(p) !== "In Stock").length;
 
-  function supplierName(id: string) {
+  function supplierName(id?: string) {
     return suppliers.find((s) => s.id === id)?.name ?? "—";
   }
 
-  function openAdjust(item: InventoryItem) {
+  function openAdjust(item: Product) {
     setAdjustingItem(item);
     setDelta(0);
   }
@@ -73,7 +74,7 @@ export default function AdminInventoryPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <AdminPageHeader title="Inventory" subtitle={`${inventory.length} items tracked`} />
+      <AdminPageHeader title="Inventory" subtitle={`${products.length} items tracked`} />
 
       {!loading && lowStockCount > 0 && (
         <div className="flex items-center gap-2 bg-gold/10 border border-gold/30 text-gold rounded-xl px-4 py-3 text-sm">
@@ -90,7 +91,7 @@ export default function AdminInventoryPage() {
           className="w-full sm:w-80"
         />
         <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
+          {categoryNames.map((c) => (
             <button
               key={c}
               onClick={() => setCategory(c)}
@@ -148,8 +149,8 @@ export default function AdminInventoryPage() {
                 {filtered.map((item) => (
                   <tr key={item.id} className="border-b border-blush/30 last:border-0 hover:bg-sand/40">
                     <td className="py-3.5 px-6 font-medium text-ink">{item.name}</td>
-                    <td className="py-3.5 px-6 text-ink/60 font-mono text-xs">{item.sku}</td>
-                    <td className="py-3.5 px-6 text-ink/70">{supplierName(item.supplierId)}</td>
+                    <td className="py-3.5 px-6 text-ink/60 font-mono text-xs">{item.sku ?? "—"}</td>
+                    <td className="py-3.5 px-6 text-ink/70">{supplierName(item.preferredSupplierId)}</td>
                     <td className="py-3.5 px-6 text-ink/70">
                       {item.quantity} {item.unit}
                       {item.quantity === 1 ? "" : "s"}

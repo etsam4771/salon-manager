@@ -1,38 +1,49 @@
 import React, { useState } from 'react';
-import type { Client } from '../../../types/salon';
+import type { Customer } from '../../../types/salon';
+import { services as allServices } from '../../../data/services';
+import { staff as allStaff } from '../../../data/staff';
 import Button from '../../ui/Button';
+
+// Fields the form collects — the rest of Customer (id, loyaltyPoints,
+// visits, totalSpend, etc.) is server/store-assigned, not user-entered.
+type NewCustomerDraft = Pick<
+  Customer,
+  | 'fullName'
+  | 'phone'
+  | 'email'
+  | 'gender'
+  | 'dateOfBirth'
+  | 'address'
+  | 'preferredServiceIds'
+  | 'preferredStaffId'
+  | 'preferredTimeSlot'
+  | 'notes'
+  | 'profilePhotoUrl'
+>;
+
 interface AddClientModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (client: Omit<Client, 'id'>) => void;
+  onSave: (client: NewCustomerDraft) => void;
   availableStaff?: { id: string; name: string }[];
-  availableServices?: string[];
+  availableServices?: { id: string; name: string }[];
 }
-
-const DEFAULT_SERVICES = [
-  'Haircut', 'Hair Color', 'Facial', 'Beard Trim',
-  'Manicure', 'Pedicure', 'Massage', 'Hair Spa'
-];
 
 export default function AddClientModal({
   isOpen,
   onClose,
   onSave,
-  availableStaff = [
-    { id: '1', name: 'Alex Johnson' },
-    { id: '2', name: 'Maria Garcia' },
-    { id: '3', name: 'Sam Taylor' }
-  ],
-  availableServices = DEFAULT_SERVICES
+  availableStaff = allStaff.map((s) => ({ id: s.id, name: s.fullName })),
+  availableServices = allServices.map((s) => ({ id: s.id, name: s.name })),
 }: AddClientModalProps) {
-  const [formData, setFormData] = useState<Omit<Client, 'id'>>({
+  const [formData, setFormData] = useState<NewCustomerDraft>({
     fullName: '',
     phone: '',
     email: '',
     gender: '',
-    dob: '',
+    dateOfBirth: '',
     address: '',
-    preferredServices: [],
+    preferredServiceIds: [],
     preferredStaffId: '',
     preferredTimeSlot: '',
     notes: '',
@@ -65,13 +76,13 @@ export default function AddClientModal({
     onClose();
   };
 
-  const handleServiceToggle = (service: string) => {
+  const handleServiceToggle = (serviceId: string) => {
     setFormData(prev => {
-      const current = prev.preferredServices || [];
-      const updated = current.includes(service)
-        ? current.filter(s => s !== service)
-        : [...current, service];
-      return { ...prev, preferredServices: updated };
+      const current = prev.preferredServiceIds || [];
+      const updated = current.includes(serviceId)
+        ? current.filter(id => id !== serviceId)
+        : [...current, serviceId];
+      return { ...prev, preferredServiceIds: updated };
     });
   };
 
@@ -177,8 +188,8 @@ export default function AddClientModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
                 <input
                   type="date"
-                  value={formData.dob}
-                  onChange={(e) => setFormData({ ...formData, dob: e.target.value })}
+                  value={formData.dateOfBirth}
+                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
                   className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200"
                 />
               </div>
@@ -210,18 +221,18 @@ export default function AddClientModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Services</label>
               <div className="flex flex-wrap gap-2">
                 {availableServices.map((service) => {
-                  const isSelected = formData.preferredServices?.includes(service);
+                  const isSelected = formData.preferredServiceIds?.includes(service.id);
                   return (
                     <button
-                      key={service}
+                      key={service.id}
                       type="button"
-                      onClick={() => handleServiceToggle(service)}
+                      onClick={() => handleServiceToggle(service.id)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${isSelected
                         ? 'bg-indigo-600 text-white shadow-sm'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                         }`}
                     >
-                      {isSelected ? '✓ ' : '+ '}{service}
+                      {isSelected ? '✓ ' : '+ '}{service.name}
                     </button>
                   );
                 })}
@@ -235,11 +246,9 @@ export default function AddClientModal({
                 <select
                   value={formData.preferredStaffId}
                   onChange={(e) => {
-                    const selected = availableStaff.find(s => s.id === e.target.value);
                     setFormData({
                       ...formData,
                       preferredStaffId: e.target.value,
-                      preferredStaffName: selected?.name || ''
                     });
                   }}
                   className="w-full px-3.5 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 bg-white"

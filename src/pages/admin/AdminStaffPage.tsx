@@ -2,7 +2,8 @@ import { useState } from "react";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
 import { useSalonData } from "../../hooks/useSalonData";
 import { useToast } from "../../hooks/useToast";
-import type { StaffStatus } from "../../data/staff";
+import type { StaffStatus } from "../../types/salon";
+import { formatCurrency } from "../../utils/format";
 
 const TABS = ["Roster", "Commission", "Performance"] as const;
 
@@ -14,21 +15,18 @@ const statusStyles: Record<StaffStatus, string> = {
 
 function initials(name: string) {
   return name
-    .split(" ")
+    .split("")
     .map((p) => p[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();
 }
 
-function formatINR(amount: number) {
-  return `₹${amount.toLocaleString("en-IN")}`;
-}
-
 export default function AdminStaffPage() {
   const { staff, updateStaffStatus } = useSalonData();
   const { showToast } = useToast();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Roster");
+  console.log(staff);
 
   const maxRevenue = Math.max(...staff.map((s) => s.revenueGenerated));
 
@@ -48,11 +46,10 @@ export default function AdminStaffPage() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              tab === t
-                ? "bg-forest text-sand-light border-forest"
-                : "border-blush text-ink/60 hover:border-forest/40"
-            }`}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors ${tab === t
+              ? "bg-forest text-sand-light border-forest"
+              : "border-blush text-ink/60 hover:border-forest/40"
+              }`}
           >
             {t}
           </button>
@@ -69,11 +66,11 @@ export default function AdminStaffPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-full bg-forest text-sand-light flex items-center justify-center font-display text-sm shrink-0">
-                    {initials(s.name)}
+                    {initials(s.fullName || "")}
                   </div>
                   <div>
-                    <p className="font-medium text-ink">{s.name}</p>
-                    <p className="text-xs text-ink/50">{s.role}</p>
+                    <p className="font-medium text-ink">{s.fullName}</p>
+                    <p className="text-xs text-ink/50">{s.designation}</p>
                   </div>
                 </div>
                 <button
@@ -86,7 +83,7 @@ export default function AdminStaffPage() {
               </div>
 
               <div className="flex flex-wrap gap-1.5">
-                {s.servicesAssigned.map((sv) => (
+                {s.skills.map((sv) => (
                   <span key={sv} className="text-[11px] bg-sand text-ink/60 rounded-full px-2.5 py-1">
                     {sv}
                   </span>
@@ -99,7 +96,7 @@ export default function AdminStaffPage() {
                   <p className="text-[11px] text-ink/50 uppercase tracking-wide font-mono">Bookings</p>
                 </div>
                 <div>
-                  <p className="font-display text-lg text-ink">{formatINR(s.revenueGenerated)}</p>
+                  <p className="font-display text-lg text-ink">{formatCurrency(s.revenueGenerated)}</p>
                   <p className="text-[11px] text-ink/50 uppercase tracking-wide font-mono">Revenue</p>
                 </div>
               </div>
@@ -123,11 +120,11 @@ export default function AdminStaffPage() {
               <tbody>
                 {staff.map((s) => (
                   <tr key={s.id} className="border-b border-blush/30 last:border-0">
-                    <td className="py-3.5 px-6 font-medium text-ink">{s.name}</td>
-                    <td className="py-3.5 px-6 text-ink/70">{formatINR(s.revenueGenerated)}</td>
-                    <td className="py-3.5 px-6 text-ink/70 font-mono">{Math.round(s.commissionRate * 100)}%</td>
+                    <td className="py-3.5 px-6 font-medium text-ink">{s.fullName}</td>
+                    <td className="py-3.5 px-6 text-ink/70">{formatCurrency(s.revenueGenerated)}</td>
+                    <td className="py-3.5 px-6 text-ink/70 font-mono">{Math.round(s.commissionPct)}%</td>
                     <td className="py-3.5 px-6 text-forest font-medium">
-                      {formatINR(Math.round(s.revenueGenerated * s.commissionRate))}
+                      {formatCurrency(Math.round((s.revenueGenerated * s.commissionPct) / 100))}
                     </td>
                   </tr>
                 ))}
@@ -146,8 +143,8 @@ export default function AdminStaffPage() {
             .map((s) => (
               <div key={s.id}>
                 <div className="flex justify-between text-sm mb-2">
-                  <span>{s.name}</span>
-                  <span className="font-mono text-gold-light">{formatINR(s.revenueGenerated)}</span>
+                  <span>{s.fullName}</span>
+                  <span className="font-mono text-gold-light">{formatCurrency(s.revenueGenerated)}</span>
                 </div>
                 <div className="h-1.5 rounded-full bg-sand-light/15 overflow-hidden">
                   <div

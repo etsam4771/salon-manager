@@ -10,6 +10,9 @@ import {
   HiOutlineCreditCard,
   HiOutlineUserGroup,
   HiOutlineArchive,
+  HiOutlineChartBar,
+  HiOutlineSpeakerphone,
+  HiOutlineHeart,
 } from "react-icons/hi";
 import Logo from "../ui/Logo";
 
@@ -22,6 +25,9 @@ const links = [
   { label: "Staff", to: "/admin/staff", icon: HiOutlineUserGroup },
   { label: "Inventory", to: "/admin/inventory", icon: HiOutlineArchive },
   { label: "Revenue", to: "/admin/revenue", icon: HiOutlineCurrencyRupee },
+  { label: "Reports", to: "/admin/reports", icon: HiOutlineChartBar },
+  { label: "Marketing", to: "/admin/marketing", icon: HiOutlineSpeakerphone },
+  { label: "Loyalty", to: "/admin/loyalty", icon: HiOutlineHeart },
   { label: "Settings", to: "/admin/settings", icon: HiOutlineCog },
 ];
 

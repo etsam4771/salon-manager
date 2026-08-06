@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import Section from "../components/ui/Section";
 import Button from "../components/ui/Button";
-import { services, categories } from "../data/services";
+import { services, categoryNames } from "../data/services";
+import { formatCurrency } from "../utils/format";
 
 export default function ServicesPage() {
   const [active, setActive] = useState("All");
 
   const filtered =
-    active === "All" ? services : services.filter((s) => s.category === active);
+    active === "All" ? services : services.filter((s) => s.categoryName === active);
 
   return (
     <div>
@@ -29,7 +30,7 @@ export default function ServicesPage() {
 
       <Section className="pt-0">
         <div className="flex flex-wrap gap-3 justify-center mb-12">
-          {categories.map((cat) => (
+          {categoryNames.map((cat) => (
             <button
               key={cat}
               onClick={() => setActive(cat)}
@@ -52,14 +53,14 @@ export default function ServicesPage() {
             >
               <div>
                 <span className="font-mono text-xs uppercase tracking-wide text-gold">
-                  {s.category} · {s.duration}
+                  {s.categoryName} · {s.durationMins} min
                 </span>
                 <h3 className="font-display text-xl text-ink mt-2">{s.name}</h3>
                 <p className="text-sm text-ink/60 mt-2 leading-relaxed max-w-sm">
                   {s.description}
                 </p>
               </div>
-              <span className="font-display text-2xl text-forest shrink-0">{s.price}</span>
+              <span className="font-display text-2xl text-forest shrink-0">{formatCurrency(s.price)}</span>
             </div>
           ))}
         </div>

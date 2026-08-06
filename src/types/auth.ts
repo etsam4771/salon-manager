@@ -1,8 +1,10 @@
+import type { UserRole } from "./salon";
+
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'customer';
+  role: UserRole
 }
 
 export interface LoginCredentials {
@@ -14,7 +16,7 @@ export interface RegisterCredentials {
   email: string;
   password: string;
   name: string;
-  role: 'admin' | 'customer';
+  role: UserRole
 }
 export interface AuthResponse {
   accessToken: string;

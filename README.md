@@ -73,3 +73,28 @@ export default defineConfig([
 ])
 
 ```
+
+
+sudo rm -rf /var/www/html/*
+sudo cp -r build/* /var/www/html/
+
+ sudo rm -rf /var/www/html/*
+sudo cp -r ./dist/* /var/www/html/
+
+sudo nano /etc/nginx/sites-available/default
+
+
+server {
+    listen 80;
+    server_name your_domain_or_ip;
+    #server_name .elanova.com;
+
+    root /var/www/html;
+    index index.html;
+
+    location / {
+        try_files $uri /index.html;
+    }
+}
+
+sudo systemctl restart nginx

@@ -9,11 +9,10 @@ import {
 import { FaWhatsapp } from "react-icons/fa";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
 import { services } from "../../data/services";
-import { inventory } from "../../data/inventory";
 import { stylists } from "../../data/stylists";
 import { useSalonData } from "../../hooks/useSalonData";
 import { useToast } from "../../hooks/useToast";
-import type { SaleLine } from "../../store/SalonDataContext";
+import type { PaymentMethod } from "../../types/salon";
 
 type CatalogItem = {
   key: string;
@@ -25,44 +24,65 @@ type CatalogItem = {
   stock?: number;
 };
 
-type CartLine = SaleLine & { key: string };
+interface CartLine {
+  key: string;
+  kind: "service" | "product";
+  refId: string;
+  name: string;
+  unitPrice: number;
+  qty: number;
+  stylist?: string;
+}
 
 const PROMO_CODES: Record<string, { label: string; type: "percent" | "fixed"; value: number }> = {
   WELCOME10: { label: "WELCOME10 (10% off)", type: "percent", value: 10 },
   FLAT500: { label: "FLAT500 (₹500 off)", type: "fixed", value: 500 },
 };
 
-function parsePrice(price: string) {
-  return Number(price.replace(/[^0-9]/g, "")) || 0;
-}
+const DISPLAY_PAYMENT_METHODS = ["Cash", "UPI", "Card", "Split"] as const;
+type DisplayPaymentMethod = (typeof DISPLAY_PAYMENT_METHODS)[number];
 
-const catalog: CatalogItem[] = [
-  ...services.map((s) => ({
-    key: `service-${s.id}`,
-    kind: "service" as const,
-    refId: s.id,
-    name: s.name,
-    price: parsePrice(s.price),
-    category: s.category,
-  })),
-  ...inventory
-    .filter((i) => i.retail)
-    .map((i) => ({
-      key: `product-${i.id}`,
-      kind: "product" as const,
-      refId: i.id,
-      name: i.name,
-      price: i.sellPrice,
-      category: "Products",
-      stock: i.quantity,
-    })),
-];
+// The UI still shows "Split" as one of the buttons for convenience, but the
+// schema's PaymentMethod enum has no such value — a split tender becomes two
+// Payment rows against the same Invoice in a real backend. For this single
+// mock Payment record we record whichever tender the split leans on.
+function toSchemaPaymentMethod(method: DisplayPaymentMethod, splitCash: number, splitOther: number): PaymentMethod {
+  if (method === "Cash") return "cash";
+  if (method === "UPI") return "upi";
+  if (method === "Card") return "card";
+  return splitCash >= splitOther ? "cash" : "card";
+}
 
 const categories = ["All", "Skin", "Body", "Hair", "Nails", "Packages", "Products"];
 
 export default function AdminPOSPage() {
-  const { clients, inventory: liveInventory, completeSale } = useSalonData();
+  const { customers, products, createInvoice } = useSalonData();
   const { showToast } = useToast();
+
+  const catalog: CatalogItem[] = useMemo(
+    () => [
+      ...services.map((s) => ({
+        key: `service-${s.id}`,
+        kind: "service" as const,
+        refId: s.id,
+        name: s.name,
+        price: s.price,
+        category: s.categoryName,
+      })),
+      ...products
+        .filter((p) => p.usageType === "retail" || p.usageType === "both")
+        .map((p) => ({
+          key: `product-${p.id}`,
+          kind: "product" as const,
+          refId: p.id,
+          name: p.name,
+          price: p.sellingPrice,
+          category: "Products",
+          stock: p.quantity,
+        })),
+    ],
+    [products]
+  );
 
   const [activeCategory, setActiveCategory] = useState("All");
   const [cart, setCart] = useState<CartLine[]>([]);
@@ -73,17 +93,17 @@ export default function AdminPOSPage() {
   const [discountLabel, setDiscountLabel] = useState("No discount");
   const [promoInput, setPromoInput] = useState("");
 
-  const [paymentMethod, setPaymentMethod] = useState<"Cash" | "UPI" | "Card" | "Split">("Cash");
+  const [paymentMethod, setPaymentMethod] = useState<DisplayPaymentMethod>("Cash");
   const [splitCash, setSplitCash] = useState(0);
   const [splitOther, setSplitOther] = useState(0);
 
   const filteredCatalog = useMemo(
     () => (activeCategory === "All" ? catalog : catalog.filter((c) => c.category === activeCategory)),
-    [activeCategory]
+    [catalog, activeCategory]
   );
 
   function stockFor(refId: string) {
-    return liveInventory.find((i) => i.id === refId)?.quantity ?? 0;
+    return products.find((p) => p.id === refId)?.quantity ?? 0;
   }
 
   function addToCart(item: CatalogItem) {
@@ -155,13 +175,13 @@ export default function AdminPOSPage() {
   const tax = Math.round(taxable * 0.18);
   const total = taxable + tax;
 
-  const selectedCustomer = clients.find((c) => c.id === customerId);
+  const selectedCustomer = customers.find((c) => c.id === customerId);
   const splitValid = paymentMethod !== "Split" || splitCash + splitOther === total;
 
   function buildInvoiceText() {
     const lines = cart.map((l) => `${l.name} x${l.qty} — ₹${(l.unitPrice * l.qty).toLocaleString("en-IN")}`);
     return [
-      `Invoice — ${selectedCustomer?.name ?? "Walk-in customer"}`,
+      `Invoice — ${selectedCustomer?.fullName ?? "Walk-in customer"}`,
       ...lines,
       `Subtotal: ₹${subtotal.toLocaleString("en-IN")}`,
       discountAmount > 0 ? `Discount: -₹${discountAmount.toLocaleString("en-IN")}` : null,
@@ -201,23 +221,23 @@ export default function AdminPOSPage() {
       return;
     }
 
-    completeSale({
+    createInvoice({
       customerId: customerId || undefined,
-      customerName: selectedCustomer?.name ?? "Walk-in customer",
+      customerName: selectedCustomer?.fullName ?? "Walk-in customer",
       lines: cart.map((l) => ({
-        kind: l.kind,
-        refId: l.refId,
-        name: l.name,
+        itemType: l.kind,
+        referenceId: l.refId,
+        description: l.name,
         unitPrice: l.unitPrice,
-        qty: l.qty,
+        quantity: l.qty,
         stylist: l.stylist,
       })),
       discountLabel,
       subtotal,
       discountAmount,
-      tax,
-      total,
-      paymentMethod,
+      taxAmount: tax,
+      totalAmount: total,
+      paymentMethod: toSchemaPaymentMethod(paymentMethod, splitCash, splitOther),
     });
 
     showToast(`Checkout complete — ₹${total.toLocaleString("en-IN")} via ${paymentMethod}.`, "success");
@@ -297,9 +317,9 @@ export default function AdminPOSPage() {
               className="mt-2 w-full rounded-lg border border-blush px-4 py-2.5 text-sm outline-none focus:border-forest transition-colors bg-white"
             >
               <option value="">Walk-in customer</option>
-              {clients.map((c) => (
+              {customers.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name}
+                  {c.fullName}
                 </option>
               ))}
             </select>
@@ -428,7 +448,7 @@ export default function AdminPOSPage() {
           <div className="border-t border-blush/40 pt-4">
             <p className="text-sm text-ink/70 mb-2">Payment method</p>
             <div className="flex flex-wrap gap-2">
-              {(["Cash", "UPI", "Card", "Split"] as const).map((m) => (
+              {DISPLAY_PAYMENT_METHODS.map((m) => (
                 <button
                   key={m}
                   onClick={() => setPaymentMethod(m)}

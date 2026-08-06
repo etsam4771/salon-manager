@@ -2,14 +2,15 @@ import { useMemo, useState } from "react";
 import { HiOutlinePlus, HiOutlinePencil } from "react-icons/hi";
 import AdminPageHeader from "../../components/admin/AdminPageHeader";
 import Button from "../../components/ui/Button";
-import { categories, services } from "../../data/services";
+import { categoryNames, services } from "../../data/services";
+import { formatCurrency } from "../../utils/format";
 
 export default function AdminServicesPage() {
   const [activeCategory, setActiveCategory] = useState("All");
 
   const filtered = useMemo(
     () =>
-      activeCategory === "All" ? services : services.filter((s) => s.category === activeCategory),
+      activeCategory === "All" ? services : services.filter((s) => s.categoryName === activeCategory),
     [activeCategory]
   );
 
@@ -26,7 +27,7 @@ export default function AdminServicesPage() {
       />
 
       <div className="flex flex-wrap gap-2">
-        {categories.map((c) => (
+        {categoryNames.map((c) => (
           <button
             key={c}
             onClick={() => setActiveCategory(c)}
@@ -50,7 +51,7 @@ export default function AdminServicesPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <span className="text-[11px] font-mono uppercase tracking-wide text-gold">
-                  {s.category}
+                  {s.categoryName}
                 </span>
                 <h3 className="font-display text-lg text-ink mt-1">{s.name}</h3>
               </div>
@@ -65,8 +66,8 @@ export default function AdminServicesPage() {
             <p className="text-sm text-ink/60 leading-relaxed">{s.description}</p>
 
             <div className="flex items-center gap-4 pt-3 border-t border-blush/40 text-sm">
-              <span className="text-ink/70 font-mono">{s.duration}</span>
-              <span className="font-display text-lg text-forest ml-auto">{s.price}</span>
+              <span className="text-ink/70 font-mono">{s.durationMins} min</span>
+              <span className="font-display text-lg text-forest ml-auto">{formatCurrency(s.price)}</span>
             </div>
           </div>
         ))}

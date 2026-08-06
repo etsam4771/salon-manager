@@ -4,8 +4,14 @@ const styles: Record<string, string> = {
   Pending: "bg-blush-dark/20 text-blush-dark",
   Completed: "bg-forest/10 text-forest",
   Cancelled: "bg-red-100 text-red-600",
+  "No show": "bg-red-100 text-red-600",
   Active: "bg-forest/10 text-forest",
   Inactive: "bg-ink/10 text-ink/50",
+  Paid: "bg-forest/10 text-forest",
+  Unpaid: "bg-blush-dark/20 text-blush-dark",
+  "Partially paid": "bg-gold/15 text-gold",
+  Refunded: "bg-ink/10 text-ink/50",
+  Void: "bg-ink/10 text-ink/50",
 };
 
 export default function StatusPill({ status }: { status: string }) {

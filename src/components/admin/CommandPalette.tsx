@@ -10,6 +10,7 @@ import {
 import { useSalonData } from "../../hooks/useSalonData";
 import { services } from "../../data/services";
 import { staff } from "../../data/staff";
+import { appointmentStatusLabel, formatCurrency, formatDate, formatTime } from "../../utils/format";
 
 interface Result {
   id: string;
@@ -29,7 +30,7 @@ export default function CommandPalette({ onClose }: CommandPaletteProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const { clients, bookings } = useSalonData();
+  const { customers, appointments } = useSalonData();
 
   useEffect(() => {
     // Focus once this mounts (the parent only renders us while open).
@@ -41,61 +42,61 @@ export default function CommandPalette({ onClose }: CommandPaletteProps) {
     const q = query.trim().toLowerCase();
     if (!q) return [];
 
-    const clientResults: Result[] = clients
-      .filter((c) => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q))
+    const clientResults: Result[] = customers
+      .filter((c) => c.fullName.toLowerCase().includes(q) || (c.email ?? "").toLowerCase().includes(q))
       .slice(0, 4)
       .map((c) => ({
         id: c.id,
         group: "Clients",
-        label: c.name,
-        sublabel: c.email,
+        label: c.fullName,
+        sublabel: c.email ?? c.phone,
         path: "/admin/clients",
         icon: HiOutlineUser,
       }));
 
-    const bookingResults: Result[] = bookings
+    const bookingResults: Result[] = appointments
       .filter(
-        (b) =>
-          b.id.toLowerCase().includes(q) ||
-          b.client.toLowerCase().includes(q) ||
-          b.services.some((s) => s.toLowerCase().includes(q))
+        (a) =>
+          a.id.toLowerCase().includes(q) ||
+          a.customerName.toLowerCase().includes(q) ||
+          a.serviceName.toLowerCase().includes(q)
       )
       .slice(0, 4)
-      .map((b) => ({
-        id: b.id,
+      .map((a) => ({
+        id: a.id,
         group: "Bookings",
-        label: `${b.client} · ${b.services.join(", ")}`,
-        sublabel: `${b.date} · ${b.time} · ${b.status}`,
+        label: `${a.customerName} · ${a.serviceName}`,
+        sublabel: `${formatDate(a.startTime)} · ${formatTime(a.startTime)} · ${appointmentStatusLabel(a.status)}`,
         path: "/admin/bookings",
         icon: HiOutlineCalendar,
       }));
 
     const serviceResults: Result[] = services
-      .filter((s) => s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q))
+      .filter((s) => s.name.toLowerCase().includes(q) || s.categoryName.toLowerCase().includes(q))
       .slice(0, 4)
       .map((s) => ({
         id: s.id,
         group: "Services",
         label: s.name,
-        sublabel: `${s.category} · ${s.price}`,
+        sublabel: `${s.categoryName} · ${formatCurrency(s.price)}`,
         path: "/admin/services",
         icon: HiOutlineSparkles,
       }));
 
     const staffResults: Result[] = staff
-      .filter((s) => s.name.toLowerCase().includes(q) || s.role.toLowerCase().includes(q))
+      .filter((s) => s.fullName.toLowerCase().includes(q) || s.designation.toLowerCase().includes(q))
       .slice(0, 4)
       .map((s) => ({
         id: s.id,
         group: "Staff",
-        label: s.name,
-        sublabel: s.role,
+        label: s.fullName,
+        sublabel: s.designation,
         path: "/admin/staff",
         icon: HiOutlineUserGroup,
       }));
 
     return [...clientResults, ...bookingResults, ...serviceResults, ...staffResults];
-  }, [query, clients, bookings]);
+  }, [query, customers, appointments]);
 
   function go(result: Result) {
     navigate(result.path);

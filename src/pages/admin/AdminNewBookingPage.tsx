@@ -6,26 +6,17 @@ import SearchInput from "../../components/admin/SearchInput";
 import Button from "../../components/ui/Button";
 import { useSalonData } from "../../hooks/useSalonData";
 import { useToast } from "../../hooks/useToast";
-import { categories, services } from "../../data/services";
+import { categoryNames, services } from "../../data/services";
 import { stylists } from "../../data/stylists";
-import type { BookingStatus } from "../../data/bookings";
+import type { AppointmentStatus } from "../../types/salon";
+import { appointmentStatusLabel, formatCurrency } from "../../utils/format";
 
 type ClientMode = "existing" | "new";
 
-function parsePrice(price: string) {
-  return Number(price.replace(/[^0-9]/g, "")) || 0;
-}
-
-function parseDuration(duration: string) {
-  return Number(duration.replace(/[^0-9]/g, "")) || 0;
-}
-
-function formatINR(amount: number) {
-  return `₹${amount.toLocaleString("en-IN")}`;
-}
+const BOOKABLE_STATUSES: AppointmentStatus[] = ["confirmed", "pending"];
 
 export default function AdminNewBookingPage() {
-  const { clients, addBooking } = useSalonData();
+  const { customers, addAppointment } = useSalonData();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -39,20 +30,20 @@ export default function AdminNewBookingPage() {
 
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [stylist, setStylist] = useState(stylists[0]);
-  const [date, setDate] = useState("2026-07-29");
-  const [time, setTime] = useState("10:00 AM");
-  const [status, setStatus] = useState<BookingStatus>("Confirmed");
+  const [date, setDate] = useState("2026-08-05");
+  const [time, setTime] = useState("10:00");
+  const [status, setStatus] = useState<AppointmentStatus>("confirmed");
 
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const filteredClients = useMemo(
     () =>
-      clients.filter(
+      customers.filter(
         (c) =>
-          clientQuery.trim() === "" || c.name.toLowerCase().includes(clientQuery.toLowerCase())
+          clientQuery.trim() === "" || c.fullName.toLowerCase().includes(clientQuery.toLowerCase())
       ),
-    [clients, clientQuery]
+    [customers, clientQuery]
   );
 
   const selectedServices = useMemo(
@@ -60,10 +51,10 @@ export default function AdminNewBookingPage() {
     [selectedServiceIds]
   );
 
-  const totalPrice = selectedServices.reduce((sum, s) => sum + parsePrice(s.price), 0);
-  const totalDuration = selectedServices.reduce((sum, s) => sum + parseDuration(s.duration), 0);
+  const totalPrice = selectedServices.reduce((sum, s) => sum + s.price, 0);
+  const totalDuration = selectedServices.reduce((sum, s) => sum + s.durationMins, 0);
 
-  const selectedClient = clients.find((c) => c.id === selectedClientId) ?? null;
+  const selectedClient = customers.find((c) => c.id === selectedClientId) ?? null;
 
   function toggleService(id: string) {
     setSelectedServiceIds((prev) =>
@@ -93,9 +84,9 @@ export default function AdminNewBookingPage() {
     }
 
     setSubmitting(true);
-    addBooking({
-      clientId: clientMode === "existing" ? selectedClientId ?? undefined : undefined,
-      newClient:
+    addAppointment({
+      customerId: clientMode === "existing" ? selectedClientId ?? undefined : undefined,
+      newCustomer:
         clientMode === "new"
           ? { name: newClientName.trim(), email: newClientEmail.trim(), phone: newClientPhone.trim() }
           : undefined,
@@ -172,8 +163,8 @@ export default function AdminNewBookingPage() {
                           onChange={() => setSelectedClientId(c.id)}
                         />
                         <div>
-                          <p className="text-sm font-medium text-ink">{c.name}</p>
-                          <p className="text-xs text-ink/50">{c.email}</p>
+                          <p className="text-sm font-medium text-ink">{c.fullName}</p>
+                          <p className="text-xs text-ink/50">{c.email ?? c.phone}</p>
                         </div>
                       </div>
                       <span className="text-xs text-ink/50 font-mono">{c.visits} visits</span>
@@ -231,7 +222,7 @@ export default function AdminNewBookingPage() {
           <section className="bg-sand-light rounded-2xl border border-blush/60 p-6 md:p-8">
             <h2 className="font-display text-xl text-ink mb-5">Services</h2>
             <div className="flex flex-col gap-6">
-              {categories
+              {categoryNames
                 .filter((c) => c !== "All")
                 .map((category) => (
                   <div key={category}>
@@ -240,7 +231,7 @@ export default function AdminNewBookingPage() {
                     </p>
                     <div className="flex flex-col gap-1.5">
                       {services
-                        .filter((s) => s.category === category)
+                        .filter((s) => s.categoryName === category)
                         .map((s) => (
                           <label
                             key={s.id}
@@ -259,10 +250,10 @@ export default function AdminNewBookingPage() {
                               />
                               <div>
                                 <p className="text-sm font-medium text-ink">{s.name}</p>
-                                <p className="text-xs text-ink/50 font-mono">{s.duration}</p>
+                                <p className="text-xs text-ink/50 font-mono">{s.durationMins} min</p>
                               </div>
                             </div>
-                            <span className="text-sm text-ink/70">{s.price}</span>
+                            <span className="text-sm text-ink/70">{formatCurrency(s.price)}</span>
                           </label>
                         ))}
                     </div>
@@ -299,12 +290,12 @@ export default function AdminNewBookingPage() {
                 <select
                   id="status"
                   value={status}
-                  onChange={(e) => setStatus(e.target.value as BookingStatus)}
+                  onChange={(e) => setStatus(e.target.value as AppointmentStatus)}
                   className="mt-2 w-full rounded-lg border border-blush px-4 py-3 text-sm outline-none focus:border-forest transition-colors bg-white"
                 >
-                  {(["Confirmed", "Pending"] as BookingStatus[]).map((s) => (
+                  {BOOKABLE_STATUSES.map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {appointmentStatusLabel(s)}
                     </option>
                   ))}
                 </select>
@@ -327,10 +318,9 @@ export default function AdminNewBookingPage() {
                 </label>
                 <input
                   id="time"
-                  type="text"
+                  type="time"
                   value={time}
                   onChange={(e) => setTime(e.target.value)}
-                  placeholder="10:00 AM"
                   className="mt-2 w-full rounded-lg border border-blush px-4 py-3 text-sm outline-none focus:border-forest transition-colors"
                 />
               </div>
@@ -346,7 +336,7 @@ export default function AdminNewBookingPage() {
             <p className="text-xs uppercase tracking-wide text-sand-light/60 font-mono mb-1">Client</p>
             <p className="text-sm">
               {clientMode === "existing"
-                ? selectedClient?.name ?? "No client selected"
+                ? selectedClient?.fullName ?? "No client selected"
                 : newClientName.trim() || "New client"}
             </p>
           </div>
@@ -362,7 +352,7 @@ export default function AdminNewBookingPage() {
                 {selectedServices.map((s) => (
                   <li key={s.id} className="flex justify-between text-sm gap-3">
                     <span>{s.name}</span>
-                    <span className="text-gold-light font-mono shrink-0">{s.price}</span>
+                    <span className="text-gold-light font-mono shrink-0">{formatCurrency(s.price)}</span>
                   </li>
                 ))}
               </ul>
@@ -376,7 +366,7 @@ export default function AdminNewBookingPage() {
             </div>
             <div className="flex justify-between text-lg font-display">
               <span>Total</span>
-              <span className="text-gold-light">{formatINR(totalPrice)}</span>
+              <span className="text-gold-light">{formatCurrency(totalPrice)}</span>
             </div>
           </div>
 

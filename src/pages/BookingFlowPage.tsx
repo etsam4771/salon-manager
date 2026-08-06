@@ -10,14 +10,11 @@ import {
 } from "react-icons/hi";
 import Logo from "../components/ui/Logo";
 import Button from "../components/ui/Button";
-import { services, categories } from "../data/services";
+import { services, categoryNames } from "../data/services";
 import { stylists } from "../data/stylists";
 import { useSalonData } from "../hooks/useSalonData";
 import { defaultSalonProfile } from "../types/salon";
-
-function parsePrice(price: string) {
-  return Number(price.replace(/[^0-9]/g, "")) || 0;
-}
+import { formatCurrency } from "../utils/format";
 
 function nextDays(count: number) {
   return Array.from({ length: count }).map((_, i) => {
@@ -27,6 +24,7 @@ function nextDays(count: number) {
   });
 }
 
+// 24-hour "HH:MM" slots — matches the time format Appointment.startTime is built from.
 function timeSlots(openTime: string, closeTime: string) {
   const [openH, openM] = openTime.split(":").map(Number);
   const [closeH, closeM] = closeTime.split(":").map(Number);
@@ -34,14 +32,19 @@ function timeSlots(openTime: string, closeTime: string) {
   let mins = openH * 60 + openM;
   const end = closeH * 60 + closeM;
   while (mins < end) {
-    const h24 = Math.floor(mins / 60);
+    const h = Math.floor(mins / 60);
     const m = mins % 60;
-    const period = h24 >= 12 ? "PM" : "AM";
-    const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
-    slots.push(`${h12}:${m.toString().padStart(2, "0")} ${period}`);
+    slots.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
     mins += 30;
   }
   return slots;
+}
+
+function formatSlot(slot: string) {
+  const [h, m] = slot.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${period}`;
 }
 
 // Deterministic "already booked" pattern so the grid feels real without a backend.
@@ -53,12 +56,7 @@ function isSlotTaken(dateKey: string, slot: string) {
 }
 
 function downloadIcs(opts: { title: string; date: string; time: string; durationMin: number }) {
-  const [time, period] = opts.time.split(" ");
-  const parts = time.split(":").map(Number);
-  let h = parts[0];
-  const m = parts[1];
-  if (period === "PM" && h !== 12) h += 12;
-  if (period === "AM" && h === 12) h = 0;
+  const [h, m] = opts.time.split(":").map(Number);
   const start = new Date(opts.date);
   start.setHours(h, m, 0, 0);
   const end = new Date(start.getTime() + opts.durationMin * 60000);
@@ -85,7 +83,7 @@ function downloadIcs(opts: { title: string; date: string; time: string; duration
 }
 
 export default function BookingFlowPage() {
-  const { salonProfile, addBooking, bookings } = useSalonData();
+  const { salonProfile, addAppointment, appointments } = useSalonData();
   const profile = salonProfile ?? defaultSalonProfile;
 
   const [step, setStep] = useState(0);
@@ -108,11 +106,8 @@ export default function BookingFlowPage() {
   const dateKey = selectedDate.toISOString().slice(0, 10);
 
   const selectedServices = services.filter((s) => selectedServiceIds.includes(s.id));
-  const total = selectedServices.reduce((sum, s) => sum + parsePrice(s.price), 0);
-  const totalDuration = selectedServices.reduce(
-    (sum, s) => sum + (Number(s.duration.replace(/[^0-9]/g, "")) || 0),
-    0
-  );
+  const total = selectedServices.reduce((sum, s) => sum + s.price, 0);
+  const totalDuration = selectedServices.reduce((sum, s) => sum + s.durationMins, 0);
 
   function toggleService(id: string) {
     setSelectedServiceIds((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
@@ -130,15 +125,15 @@ export default function BookingFlowPage() {
 
   function confirmBooking() {
     if (!selectedTime) return;
-    const booking = addBooking({
-      newClient: { name, email: "", phone },
+    const appointment = addAppointment({
+      newCustomer: { name, email: "", phone },
       serviceIds: selectedServiceIds,
-      stylist: anyStylist ? stylists[bookings.length % stylists.length] : stylist,
+      stylist: anyStylist ? stylists[appointments.length % stylists.length] : stylist,
       date: dateKey,
       time: selectedTime,
-      status: "Pending",
+      status: "pending",
     });
-    setConfirmedBookingId(booking.id);
+    setConfirmedBookingId(appointment.id);
   }
 
   const stepValid = () => {
@@ -157,7 +152,7 @@ export default function BookingFlowPage() {
           </div>
           <h1 className="font-display text-2xl text-ink">You're booked!</h1>
           <p className="text-sm text-ink/60">
-            {selectedServices.map((s) => s.name).join(", ")} on {dateKey} at {selectedTime}.
+            {selectedServices.map((s) => s.name).join(", ")} on {dateKey} at {formatSlot(selectedTime!)}.
           </p>
           <p className="text-xs text-ink/40 font-mono">Booking ID {confirmedBookingId}</p>
 
@@ -226,14 +221,14 @@ export default function BookingFlowPage() {
         {step === 1 && (
           <div className="flex flex-col gap-5 pb-24">
             <h1 className="font-display text-2xl text-ink">Select services</h1>
-            {categories
+            {categoryNames
               .filter((c) => c !== "All")
               .map((cat) => (
                 <div key={cat}>
                   <p className="text-[11px] font-mono uppercase tracking-wide text-gold mb-2">{cat}</p>
                   <div className="flex flex-col gap-1.5">
                     {services
-                      .filter((s) => s.category === cat)
+                      .filter((s) => s.categoryName === cat)
                       .map((s) => (
                         <label
                           key={s.id}
@@ -252,10 +247,10 @@ export default function BookingFlowPage() {
                             />
                             <div>
                               <p className="text-sm font-medium text-ink">{s.name}</p>
-                              <p className="text-xs text-ink/50 font-mono">{s.duration}</p>
+                              <p className="text-xs text-ink/50 font-mono">{s.durationMins} min</p>
                             </div>
                           </div>
-                          <span className="text-sm text-ink/70 shrink-0">{s.price}</span>
+                          <span className="text-sm text-ink/70 shrink-0">{formatCurrency(s.price)}</span>
                         </label>
                       ))}
                   </div>
@@ -337,7 +332,7 @@ export default function BookingFlowPage() {
                         : "border-blush bg-white text-ink/70 hover:border-forest/40"
                     }`}
                   >
-                    {slot}
+                    {formatSlot(slot)}
                   </button>
                 );
               })}
@@ -353,9 +348,9 @@ export default function BookingFlowPage() {
             <div className="rounded-xl bg-white border border-blush/60 p-4 text-sm text-ink/70 flex flex-col gap-1">
               <p className="text-ink font-medium">{selectedServices.map((s) => s.name).join(", ")}</p>
               <p>
-                {dateKey} · {selectedTime} · {anyStylist ? "Any available stylist" : stylist}
+                {dateKey} · {formatSlot(selectedTime!)} · {anyStylist ? "Any available stylist" : stylist}
               </p>
-              <p className="font-display text-lg text-forest mt-1">₹{total.toLocaleString("en-IN")}</p>
+              <p className="font-display text-lg text-forest mt-1">{formatCurrency(total)}</p>
             </div>
 
             <div>
@@ -442,7 +437,7 @@ export default function BookingFlowPage() {
               {step < 3 && (
                 <div className="flex items-center gap-3 ml-auto">
                   {step === 1 && selectedServices.length > 0 && (
-                    <span className="text-sm text-ink/60">₹{total.toLocaleString("en-IN")}</span>
+                    <span className="text-sm text-ink/60">{formatCurrency(total)}</span>
                   )}
                   <Button onClick={() => setStep((s) => s + 1)} disabled={!stepValid()} className="gap-1.5">
                     Continue <HiOutlineArrowRight size={14} />

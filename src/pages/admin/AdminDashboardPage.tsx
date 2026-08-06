@@ -9,18 +9,27 @@ import StatCard from "../../components/admin/StatCard";
 import StatusPill from "../../components/admin/StatusPill";
 import { useSalonData } from "../../hooks/useSalonData";
 import { useAuth } from "../../hooks/useAuth";
+import { appointmentStatusLabel, formatCurrency, formatTime } from "../../utils/format";
 
-const stats = [
-  { label: "Today's bookings", value: "18", icon: HiOutlineCalendar, delta: "+3 vs yesterday" },
-  { label: "Revenue today", value: "₹34,200", icon: HiOutlineCurrencyRupee, delta: "+12% vs last week" },
-  { label: "New clients", value: "6", icon: HiOutlineUserAdd, delta: "+2 vs yesterday" },
-  { label: "Chair occupancy", value: "82%", icon: HiOutlineSparkles, delta: "4 rooms active" },
-];
+const TODAY = "2026-08-05";
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
-  const { bookings } = useSalonData();
-  const todaysBookings = bookings.filter((b) => b.date === "2026-07-29").slice(0, 5);
+  const { appointments } = useSalonData();
+
+
+  const todaysAppointments = appointments.filter((a) => a.startTime.startsWith(TODAY));
+  const todaysAppointmentsPreview = todaysAppointments.slice(0, 5);
+  const revenueToday = todaysAppointments
+    .filter((a) => a.status !== "cancelled")
+    .reduce((sum, a) => sum + a.finalPrice, 0);
+
+  const stats = [
+    { label: "Today's bookings", value: String(todaysAppointments.length), icon: HiOutlineCalendar, delta: "+3 vs yesterday" },
+    { label: "Revenue today", value: formatCurrency(revenueToday), icon: HiOutlineCurrencyRupee, delta: "+12% vs last week" },
+    { label: "New clients", value: "6", icon: HiOutlineUserAdd, delta: "+2 vs yesterday" },
+    { label: "Chair occupancy", value: "82%", icon: HiOutlineSparkles, delta: "4 rooms active" },
+  ];
 
   return (
     <div className="flex flex-col gap-8">
@@ -56,16 +65,23 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {todaysBookings.map((b) => (
-                  <tr key={b.id} className="border-b border-blush/30 last:border-0">
-                    <td className="py-3.5 font-medium text-ink">{b.client}</td>
-                    <td className="py-3.5 text-ink/70">{b.services.join(", ")}</td>
-                    <td className="py-3.5 text-ink/70 font-mono">{b.time}</td>
+                {todaysAppointmentsPreview.map((a) => (
+                  <tr key={a.id} className="border-b border-blush/30 last:border-0">
+                    <td className="py-3.5 font-medium text-ink">{a.customerName}</td>
+                    <td className="py-3.5 text-ink/70">{a.serviceName}</td>
+                    <td className="py-3.5 text-ink/70 font-mono">{formatTime(a.startTime)}</td>
                     <td className="py-3.5">
-                      <StatusPill status={b.status} />
+                      <StatusPill status={appointmentStatusLabel(a.status)} />
                     </td>
                   </tr>
                 ))}
+                {todaysAppointmentsPreview.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="py-6 text-center text-ink/40">
+                      No bookings scheduled for today.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

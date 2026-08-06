@@ -1,4 +1,4 @@
-const VERSION = "V1";
+const VERSION = "v1";
 const PREFIX = `/api/${VERSION}`;
 
 export const apiEndpoints = Object.freeze({

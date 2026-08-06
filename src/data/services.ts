@@ -1,84 +1,95 @@
-export interface Service {
-  id: string;
-  category: string;
-  name: string;
-  duration: string;
-  price: string;
-  description: string;
-}
+import type { Service, ServiceCategory } from "../types/salon";
+
+export const serviceCategories: ServiceCategory[] = [
+  { id: "cat-skin", name: "Skin" },
+  { id: "cat-body", name: "Body" },
+  { id: "cat-hair", name: "Hair" },
+  { id: "cat-nails", name: "Nails" },
+  { id: "cat-packages", name: "Packages" },
+];
 
 export const services: Service[] = [
   {
     id: "signature-facial",
-    category: "Skin",
+    categoryId: "cat-skin",
+    categoryName: "Skin",
     name: "Elanova Signature Facial",
-    duration: "75 min",
-    price: "₹3,200",
+    durationMins: 75,
+    price: 3200,
+    isActive: true,
     description:
       "A layered ritual of steam, cold-stone massage, and a botanical enzyme mask suited to your skin's mood that day.",
   },
   {
     id: "deep-tissue",
-    category: "Body",
+    categoryId: "cat-body",
+    categoryName: "Body",
     name: "Deep Tissue Massage",
-    duration: "60 min",
-    price: "₹2,800",
-    description:
-      "Slow, deliberate pressure through the shoulders and back, aimed at knots built up over weeks, not days.",
+    durationMins: 60,
+    price: 2800,
+    isActive: true,
+    description: "Slow, deliberate pressure through the shoulders and back, aimed at knots built up over weeks, not days.",
   },
   {
     id: "hot-stone",
-    category: "Body",
+    categoryId: "cat-body",
+    categoryName: "Body",
     name: "Hot Stone Therapy",
-    duration: "90 min",
-    price: "₹3,600",
-    description:
-      "Warmed basalt stones trace the spine and limbs, easing muscle into stillness before hands take over.",
+    durationMins: 90,
+    price: 3600,
+    isActive: true,
+    description: "Warmed basalt stones trace the spine and limbs, easing muscle into stillness before hands take over.",
   },
   {
     id: "classic-haircut",
-    category: "Hair",
+    categoryId: "cat-hair",
+    categoryName: "Hair",
     name: "Precision Haircut & Style",
-    duration: "45 min",
-    price: "₹1,400",
-    description:
-      "A consultation-led cut finished with a blow-dry shaped to how you actually wear your hair.",
+    durationMins: 45,
+    price: 1400,
+    isActive: true,
+    description: "A consultation-led cut finished with a blow-dry shaped to how you actually wear your hair.",
   },
   {
     id: "keratin",
-    category: "Hair",
+    categoryId: "cat-hair",
+    categoryName: "Hair",
     name: "Keratin Smoothing",
-    duration: "150 min",
-    price: "₹6,500",
-    description:
-      "Frizz-taming treatment that softens texture for up to twelve weeks without flattening natural volume.",
+    durationMins: 150,
+    price: 6500,
+    isActive: true,
+    description: "Frizz-taming treatment that softens texture for up to twelve weeks without flattening natural volume.",
   },
   {
     id: "gel-manicure",
-    category: "Nails",
+    categoryId: "cat-nails",
+    categoryName: "Nails",
     name: "Gel Manicure",
-    duration: "50 min",
-    price: "₹1,100",
+    durationMins: 50,
+    price: 1100,
+    isActive: true,
     description: "Cuticle care, shape, and a chip-resistant gel finish in a shade from our seasonal edit.",
   },
   {
     id: "pedicure-ritual",
-    category: "Nails",
+    categoryId: "cat-nails",
+    categoryName: "Nails",
     name: "Restorative Pedicure",
-    duration: "60 min",
-    price: "₹1,500",
-    description:
-      "Warm salt soak, callus treatment, and an extended foot-and-calf massage to close out the session.",
+    durationMins: 60,
+    price: 1500,
+    isActive: true,
+    description: "Warm salt soak, callus treatment, and an extended foot-and-calf massage to close out the session.",
   },
   {
     id: "bridal-package",
-    category: "Packages",
+    categoryId: "cat-packages",
+    categoryName: "Packages",
     name: "Bridal Glow Package",
-    duration: "4 hrs",
-    price: "₹14,000",
-    description:
-      "Facial, hair styling, makeup trial, and mani-pedi bundled into a single unhurried appointment.",
+    durationMins: 240,
+    price: 14000,
+    isActive: true,
+    description: "Facial, hair styling, makeup trial, and mani-pedi bundled into a single unhurried appointment.",
   },
 ];
 
-export const categories = ["All", "Skin", "Body", "Hair", "Nails", "Packages"];
+export const categoryNames = ["All", ...serviceCategories.map((c) => c.name)];

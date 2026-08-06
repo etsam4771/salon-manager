@@ -1,34 +1,130 @@
-export type StockStatus = "In Stock" | "Low Stock" | "Out of Stock";
+import type { InventoryAlert, Product } from "../types/salon";
 
-export interface InventoryItem {
-  id: string;
-  name: string;
-  category: "Hair" | "Skin" | "Nails" | "Spa" | "Tools";
-  sku: string;
-  quantity: number;
-  threshold: number;
-  unit: string;
-  supplierId: string;
-  costPrice: number;
-  sellPrice: number;
-  retail: boolean; // sellable to walk-in customers via POS
-}
-
-export const inventory: InventoryItem[] = [
-  { id: "inv-01", name: "Argan Repair Shampoo 250ml", category: "Hair", sku: "HR-SHM-250", quantity: 34, threshold: 10, unit: "bottle", supplierId: "sp-01", costPrice: 280, sellPrice: 650, retail: true },
-  { id: "inv-02", name: "Keratin Smoothing Serum", category: "Hair", sku: "HR-SER-100", quantity: 6, threshold: 8, unit: "bottle", supplierId: "sp-01", costPrice: 420, sellPrice: 950, retail: true },
-  { id: "inv-03", name: "Vitamin C Brightening Mask", category: "Skin", sku: "SK-MSK-050", quantity: 18, threshold: 10, unit: "jar", supplierId: "sp-02", costPrice: 190, sellPrice: 450, retail: true },
-  { id: "inv-04", name: "SPF 50 Daily Sunscreen", category: "Skin", sku: "SK-SPF-075", quantity: 3, threshold: 12, unit: "tube", supplierId: "sp-02", costPrice: 160, sellPrice: 420, retail: true },
-  { id: "inv-05", name: "Gel Polish — Rose Nude", category: "Nails", sku: "NL-GEL-014", quantity: 22, threshold: 6, unit: "bottle", supplierId: "sp-03", costPrice: 110, sellPrice: 0, retail: false },
-  { id: "inv-06", name: "Cuticle Oil Pen", category: "Nails", sku: "NL-OIL-009", quantity: 0, threshold: 10, unit: "pcs", supplierId: "sp-03", costPrice: 60, sellPrice: 250, retail: true },
-  { id: "inv-07", name: "Hot Stone Set (12pc)", category: "Spa", sku: "SP-STN-012", quantity: 5, threshold: 2, unit: "set", supplierId: "sp-04", costPrice: 1800, sellPrice: 0, retail: false },
-  { id: "inv-08", name: "Massage Oil — Lavender 500ml", category: "Spa", sku: "SP-OIL-500", quantity: 14, threshold: 8, unit: "bottle", supplierId: "sp-04", costPrice: 220, sellPrice: 580, retail: true },
-  { id: "inv-09", name: "Disposable Towels (pack of 50)", category: "Tools", sku: "TL-TWL-050", quantity: 9, threshold: 15, unit: "pack", supplierId: "sp-04", costPrice: 340, sellPrice: 0, retail: false },
-  { id: "inv-10", name: "Nitrile Gloves (box of 100)", category: "Tools", sku: "TL-GLV-100", quantity: 2, threshold: 5, unit: "box", supplierId: "sp-04", costPrice: 260, sellPrice: 0, retail: false },
+export const products: Product[] = [
+  {
+    id: "prd-01",
+    tenantId: "tn-01",
+    categoryId: "cat-hair",
+    categoryName: "Hair",
+    preferredSupplierId: "sup-02",
+    name: "Keratin Smoothing Serum 250ml",
+    brand: "L'Oreal Professionnel",
+    sku: "LOP-KS-250",
+    unit: "ml",
+    usageType: "back_bar",
+    reorderLevel: 5,
+    costPrice: 1450,
+    sellingPrice: 2200,
+    isActive: true,
+    quantity: 3,
+    parLevel: 10,
+  },
+  {
+    id: "prd-02",
+    tenantId: "tn-01",
+    categoryId: "cat-skin",
+    categoryName: "Skin",
+    preferredSupplierId: "sup-04",
+    name: "Botanical Enzyme Mask 100g",
+    brand: "Forest Essentials",
+    sku: "FE-BEM-100",
+    unit: "g",
+    usageType: "back_bar",
+    reorderLevel: 8,
+    costPrice: 680,
+    sellingPrice: 1050,
+    isActive: true,
+    quantity: 22,
+    parLevel: 15,
+  },
+  {
+    id: "prd-03",
+    tenantId: "tn-01",
+    categoryId: "cat-nails",
+    categoryName: "Nails",
+    preferredSupplierId: "sup-03",
+    name: "Gel Polish - Ruby Red 15ml",
+    brand: "OPI",
+    sku: "OPI-GP-RR15",
+    unit: "ml",
+    usageType: "both",
+    reorderLevel: 6,
+    costPrice: 420,
+    sellingPrice: 750,
+    isActive: true,
+    quantity: 0,
+    parLevel: 12,
+  },
+  {
+    id: "prd-04",
+    tenantId: "tn-01",
+    categoryId: "cat-hair",
+    categoryName: "Hair",
+    preferredSupplierId: "sup-01",
+    name: "Sulfate-Free Shampoo 1L",
+    brand: "Lakme Professional",
+    sku: "LKP-SFS-1000",
+    unit: "l",
+    usageType: "retail",
+    reorderLevel: 4,
+    costPrice: 890,
+    sellingPrice: 1350,
+    isActive: true,
+    quantity: 18,
+    parLevel: 10,
+  },
+  {
+    id: "prd-05",
+    tenantId: "tn-01",
+    categoryId: "cat-body",
+    categoryName: "Body",
+    preferredSupplierId: "sup-04",
+    name: "Massage Oil - Lavender 500ml",
+    brand: "Forest Essentials",
+    sku: "FE-MO-LAV500",
+    unit: "ml",
+    usageType: "back_bar",
+    reorderLevel: 5,
+    costPrice: 610,
+    sellingPrice: 990,
+    isActive: true,
+    quantity: 4,
+    parLevel: 8,
+  },
 ];
 
-export function stockStatus(item: InventoryItem): StockStatus {
-  if (item.quantity <= 0) return "Out of Stock";
-  if (item.quantity <= item.threshold) return "Low Stock";
-  return "In Stock";
-}
+export const inventoryAlerts: InventoryAlert[] = [
+  {
+    id: "alt-01",
+    branchId: "br-01",
+    productId: "prd-01",
+    productName: "Keratin Smoothing Serum 250ml",
+    locationType: "back_bar",
+    currentQty: 3,
+    parLevel: 10,
+    status: "open",
+    triggeredAt: "2026-08-04T09:00:00",
+  },
+  {
+    id: "alt-02",
+    branchId: "br-01",
+    productId: "prd-03",
+    productName: "Gel Polish - Ruby Red 15ml",
+    locationType: "retail_floor",
+    currentQty: 0,
+    parLevel: 12,
+    status: "open",
+    triggeredAt: "2026-08-03T14:20:00",
+  },
+  {
+    id: "alt-03",
+    branchId: "br-01",
+    productId: "prd-05",
+    productName: "Massage Oil - Lavender 500ml",
+    locationType: "back_bar",
+    currentQty: 4,
+    parLevel: 8,
+    status: "acknowledged",
+    triggeredAt: "2026-08-02T11:15:00",
+  },
+];

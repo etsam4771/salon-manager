@@ -14,17 +14,21 @@ import AdminLayout from './components/layout/AdminLayout'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage'
 import AdminBookingsPage from './pages/admin/AdminBookingsPage'
 import AdminNewBookingPage from './pages/admin/AdminNewBookingPage'
+import AdminClientsPage from './pages/admin/AdminClientsPage'
 import AdminServicesPage from './pages/admin/AdminServicesPage'
 import AdminPOSPage from './pages/admin/AdminPOSPage'
 import AdminStaffPage from './pages/admin/AdminStaffPage'
 import AdminInventoryPage from './pages/admin/AdminInventoryPage'
 import AdminRevenuePage from './pages/admin/AdminRevenuePage'
+import AdminReportsPage from './pages/admin/AdminReportsPage'
+import AdminMarketingPage from './pages/admin/AdminMarketingPage'
+import AdminLoyaltyPage from './pages/admin/AdminLoyaltyPage'
 import AdminSettingsPage from './pages/admin/AdminSettingsPage'
 import { AuthProvider } from './store/AuthContext'
 import { SalonDataProvider } from './store/SalonDataContext'
 import { ToastProvider } from './store/ToastContext'
 import ProtectedRoute from './routes/ProtectedRoute'
-import AdminClientsPage from './pages/admin/AdminClientsPage'
+import AdminFinalizeOnboardPage from './pages/admin/AdminFinalizeOnboardPage'
 
 function App() {
 
@@ -58,12 +62,14 @@ function App() {
               <Route
                 path="/admin"
                 element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
+                  <ProtectedRoute>
                     <AdminLayout />
                   </ProtectedRoute>
                 }
               >
                 <Route index element={<AdminDashboardPage />} />
+                {/* <Route path="onboard-finalize" element={<AdminFinalizeOnboardPage />} /> */}
+                <Route path="onboard-finalize" element={<AdminFinalizeOnboardPage />} />
                 <Route path="bookings" element={<AdminBookingsPage />} />
                 <Route path="bookings/new" element={<AdminNewBookingPage />} />
                 <Route path="clients" element={<AdminClientsPage />} />
@@ -72,6 +78,9 @@ function App() {
                 <Route path="staff" element={<AdminStaffPage />} />
                 <Route path="inventory" element={<AdminInventoryPage />} />
                 <Route path="revenue" element={<AdminRevenuePage />} />
+                <Route path="reports" element={<AdminReportsPage />} />
+                <Route path="marketing" element={<AdminMarketingPage />} />
+                <Route path="loyalty" element={<AdminLoyaltyPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
               </Route>
             </Routes>
