@@ -4,7 +4,7 @@ import { apiEndpoints } from "./endpoint";
 import type { ApiError, ApiResponse } from "../utils/response";
 
 const api = axios.create({
-    baseURL: `${CONFIG.API_URL+apiEndpoints.prefix}`,
+    baseURL: `${CONFIG.API_URL + apiEndpoints.prefix}`,
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json'
@@ -14,7 +14,7 @@ const api = axios.create({
 // Request Interceptor (e.g., attach JWT token)
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('accessToken');
         if (token && config.headers) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -31,7 +31,7 @@ api.interceptors.response.use(
     },
     (error: AxiosError) => {
         if (error.response?.status === 401) {
-            localStorage.removeItem('token');
+            localStorage.removeItem('accessToken');
         }
 
         const err = error as AxiosError<ApiError>;

@@ -125,9 +125,19 @@ export interface Branch {
   addressLine?: string;
   city?: string;
   branchCode?: string;
+  country: string;
+  timezone: string;
+
+
+  region: string;
   phone?: string;
   isActive: boolean;
+  workingHours: object;
+  createdAt?: string;
+
+
 }
+
 
 // ---------------------------------------------------------------------
 // 2b. Staff (User + StaffProfile + TeamRole, UI-safe subset only —

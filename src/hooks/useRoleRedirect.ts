@@ -6,7 +6,7 @@ import type { UserRole } from "../types/salon";
 
 const roleRoutes: Record<UserRole, string> = {
   // super_admin: "/admin/me",
-  super_admin: "/admin/onbaord-finilize",
+  super_admin: "/admin/onboard-finalize",
   owner: "/owner",
   manager: "/manager",
   staff: "/staff",
@@ -15,7 +15,7 @@ const roleRoutes: Record<UserRole, string> = {
   global: "/admin"
 };
 
-const onboardFinalize = "/admin/onbaord-finilize"
+const onboardFinalize = "/admin/onboard-finalize"
 
 export const useRoleRedirect = (user: User | null) => {
   const navigate = useNavigate();

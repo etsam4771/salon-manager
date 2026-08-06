@@ -54,6 +54,7 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/onboard" element={<OnboardSalonPage />} />
+              <Route path="onboard-finalize" element={<ProtectedRoute><AdminFinalizeOnboardPage /></ProtectedRoute>} />
 
               {/* Customer-facing booking PWA — own full-page layout, no auth required */}
               <Route path="/book" element={<BookingFlowPage />} />
@@ -68,8 +69,6 @@ function App() {
                 }
               >
                 <Route index element={<AdminDashboardPage />} />
-                {/* <Route path="onboard-finalize" element={<AdminFinalizeOnboardPage />} /> */}
-                <Route path="onboard-finalize" element={<AdminFinalizeOnboardPage />} />
                 <Route path="bookings" element={<AdminBookingsPage />} />
                 <Route path="bookings/new" element={<AdminNewBookingPage />} />
                 <Route path="clients" element={<AdminClientsPage />} />
