@@ -2,8 +2,8 @@
 //
 // Post-onboarding wizard for super_admin: shows until finalisation is done.
 // Four steps:
-//   1. Profile setup        — business + owner photos (client-side, persisted
-//                             locally; backend upload endpoint not built yet)
+//   1. Profile setup        — business + owner photos uploaded to
+//                             POST /tenants/storeImages
 //   2. Service categories   — default global categories + create your own
 //   3. Service creation     — create tenant services with variations
 //   4. Team & attendance    — attendance policy + staff onboarding
@@ -25,7 +25,7 @@ import Logo from "../../components/ui/Logo";
 import { onboardingService } from "../../api/services/onboarding.service";
 import { useAuth } from "../../hooks/useAuth";
 import { useToast } from "../../hooks/useToast";
-import type { BusinessModel } from "../../types/gloable.types";
+import type { BusinessModel, SubType } from "../../types/gloable.types";
 import type {
   AttendancePolicyRequest,
   ServiceCategory,
@@ -33,7 +33,7 @@ import type {
   StaffingOnboardRequest,
   TaxRegime,
 } from "../../types/onboarding";
-import type { EmploymentStatus, EmploymentType, UserRole } from "../../types/salon";
+import type { Branch, EmploymentStatus, EmploymentType, UserRole } from "../../types/salon";
 import type { ApiError } from "../../utils/response";
 
 const STEPS_KEY = "salon:finalize_steps";
@@ -49,8 +49,13 @@ const STEP_DEFS = [
 type StepId = (typeof STEP_DEFS)[number]["id"];
 
 interface ProfileState {
+  logo: File | null;
+  ownerImage: File | null;
+}
+
+interface ProfilePreviews {
   logo: string | null;
-  avatar: string | null;
+  ownerImage: string | null;
 }
 
 interface VariationDraft {
@@ -220,13 +225,15 @@ function errMsg(err: unknown, fallback: string): string {
 }
 
 function PhotoUpload({
-  value,
-  onChange,
+  preview,
+  onSelect,
+  onRemove,
   title,
   hint,
 }: {
-  value: string | null;
-  onChange: (v: string | null) => void;
+  preview: string | null;
+  onSelect: (file: File) => void;
+  onRemove: () => void;
   title: string;
   hint: string;
 }) {
@@ -234,19 +241,17 @@ function PhotoUpload({
 
   const handleFile = (file?: File) => {
     if (!file || !file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = () => onChange(String(reader.result));
-    reader.readAsDataURL(file);
+    onSelect(file);
   };
 
   return (
     <div className="flex flex-col items-center gap-3">
       <div
-        className={`relative w-36 h-36 rounded-2xl overflow-hidden border-2 border-dashed transition-colors ${value ? "border-forest" : "border-blush"
+        className={`relative w-36 h-36 rounded-2xl overflow-hidden border-2 border-dashed transition-colors ${preview ? "border-forest" : "border-blush"
           } bg-sand-light/60`}
       >
-        {value ? (
-          <img src={value} alt={title} className="w-full h-full object-cover" />
+        {preview ? (
+          <img src={preview} alt={title} className="w-full h-full object-cover" />
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-ink/40 text-center px-3">
             <HiOutlineCamera size={22} />
@@ -272,10 +277,10 @@ function PhotoUpload({
         >
           Upload
         </button>
-        {value && (
+        {preview && (
           <button
             type="button"
-            onClick={() => onChange(null)}
+            onClick={onRemove}
             className="text-sm text-ink/40 hover:text-red-500"
           >
             Remove
@@ -322,19 +327,22 @@ export default function AdminFinalizeOnboardPage() {
       return [];
     }
   });
-  const [profile, setProfile] = useState<ProfileState>(() => {
+
+  const [profile, setProfile] = useState<ProfileState>({ logo: null, ownerImage: null });
+  const [profilePreviews, setProfilePreviews] = useState<ProfilePreviews>(() => {
     try {
       const raw = localStorage.getItem(PROFILE_KEY);
-      return raw ? (JSON.parse(raw) as ProfileState) : { logo: null, avatar: null };
+      return raw ? (JSON.parse(raw) as ProfilePreviews) : { logo: null, ownerImage: null };
     } catch {
-      return { logo: null, avatar: null };
+      return { logo: null, ownerImage: null };
     }
   });
 
-  const [businessModels, setBusinessModels] = useState<BusinessModel[]>([]);
+  const [branchSubModel, setBranchSubModel] = useState<SubType[]>([]);
   const [globalCategories, setGlobalCategories] = useState<ServiceCategory[]>([]);
   const [tenantCategories, setTenantCategories] = useState<ServiceCategory[]>([]);
   const [branches, setBranches] = useState<{ id: string; name: string; branchCode?: string }[]>([]);
+  const [workingBranch, setWorkingBranch] = useState<Branch | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [dataError, setDataError] = useState<string | null>(null);
 
@@ -357,14 +365,16 @@ export default function AdminFinalizeOnboardPage() {
   const [onboardedStaff, setOnboardedStaff] = useState<{ fullName: string; email: string; role: UserRole }[]>([]);
 
   const [error, setError] = useState<string | null>(null);
+  const [uploadingProfile, setUploadingProfile] = useState(false);
 
   const stepId = STEP_DEFS[stepIndex].id;
   const subtypeOptions = useMemo(
     () =>
-      businessModels.flatMap((m) =>
-        m.subtypes.map((s) => ({ id: s.id, name: `${s.name} (${m.name})` }))
-      ),
-    [businessModels]
+      branchSubModel.map((item) => ({
+        id: item.id,
+        name: `${item.name}`,
+      })),
+    [branchSubModel]
   );
   const allCategories = useMemo(
     () => [...globalCategories.map((c) => ({ ...c, origin: "global" as const })), ...tenantCategories.map((c) => ({ ...c, origin: "custom" as const }))],
@@ -374,13 +384,17 @@ export default function AdminFinalizeOnboardPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [models, globals, tenantCats, branchRes] = await Promise.all([
-        onboardingService.getBusinessModels(),
+      const [globals, tenantCats, branchRes] = await Promise.all([
         onboardingService.getGlobalServiceCategories(),
         onboardingService.getTenantServiceCategories().catch(() => null),
         onboardingService.getBranches().catch(() => null),
       ]);
-      setBusinessModels(models.data);
+      const selectedBranch = branchRes?.data.at(0) ?? null;
+      setWorkingBranch(selectedBranch);
+      if (selectedBranch) {
+        const subModel = await onboardingService.getBranchesBusinessSubModel(selectedBranch.id);
+        setBranchSubModel(subModel.data);
+      }
       setGlobalCategories(globals.data);
       if (tenantCats) setTenantCategories(tenantCats.data);
       if (branchRes) setBranches(branchRes.data);
@@ -402,8 +416,8 @@ export default function AdminFinalizeOnboardPage() {
   }, [completedSteps]);
 
   useEffect(() => {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-  }, [profile]);
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profilePreviews));
+  }, [profilePreviews]);
 
   const activeBranchId = attendance.branchId || branches[0]?.id || "";
 
@@ -421,14 +435,38 @@ export default function AdminFinalizeOnboardPage() {
     setStepIndex((i) => Math.max(i - 1, 0));
   };
 
-  const saveProfile = () => {
-    markComplete("profile");
-    if (!profile.logo || !profile.avatar) {
+  const selectPhoto = (kind: keyof ProfileState, file: File) => {
+    setProfile((prev) => ({ ...prev, [kind]: file }));
+    setProfilePreviews((prev) => ({ ...prev, [kind]: URL.createObjectURL(file) }));
+  };
+
+  const removePhoto = (kind: keyof ProfileState) => {
+    setProfile((prev) => ({ ...prev, [kind]: null }));
+    setProfilePreviews((prev) => ({ ...prev, [kind]: null }));
+  };
+
+  const saveProfile = async () => {
+    setError(null);
+    if (!profile.logo && !profile.ownerImage) {
+      markComplete("profile");
       showToast("Photos can be added later from Settings", "info");
-    } else {
-      showToast("Profile saved", "success");
+      goNext();
+      return;
     }
-    goNext();
+    setUploadingProfile(true);
+    try {
+      await onboardingService.storeTenantImages({
+        logo: profile.logo ?? undefined,
+        ownerImage: profile.ownerImage ?? undefined,
+      });
+      markComplete("profile");
+      showToast("Profile photos uploaded", "success");
+      goNext();
+    } catch (err) {
+      setError(errMsg(err, "Couldn't upload the photos."));
+    } finally {
+      setUploadingProfile(false);
+    }
   };
 
   const handleCreateCategory = async () => {
@@ -805,20 +843,22 @@ export default function AdminFinalizeOnboardPage() {
                   <div>
                     <h2 className="font-display text-2xl text-ink mb-1">{STEP_DEFS[0].title}</h2>
                     <p className="text-sm text-ink/60">
-                      Add photos so customers recognise your business. Uploaded photos are stored
-                      locally for now — a backend upload endpoint isn't built yet.
+                      Add photos so customers recognise your business. They're uploaded to your
+                      tenant profile when you continue.
                     </p>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-8">
                     <PhotoUpload
-                      value={profile.logo}
-                      onChange={(v) => setProfile((p) => ({ ...p, logo: v }))}
+                      preview={profilePreviews.logo}
+                      onSelect={(file) => selectPhoto("logo", file)}
+                      onRemove={() => removePhoto("logo")}
                       title="Business logo"
                       hint="Business logo / photo"
                     />
                     <PhotoUpload
-                      value={profile.avatar}
-                      onChange={(v) => setProfile((p) => ({ ...p, avatar: v }))}
+                      preview={profilePreviews.ownerImage}
+                      onSelect={(file) => selectPhoto("ownerImage", file)}
+                      onRemove={() => removePhoto("ownerImage")}
                       title="Owner photo"
                       hint="Owner profile photo"
                     />
@@ -957,8 +997,8 @@ export default function AdminFinalizeOnboardPage() {
                         }
                         className={`${inputCls} bg-white`}
                       >
-                        <option value="">Select business model</option>
-                        {businessModels.map((m) => (
+                        <option value="">Select business sub model</option>
+                        {branchSubModel.map((m) => (
                           <option key={m.id} value={m.id}>
                             {m.name}
                           </option>
@@ -1881,8 +1921,14 @@ export default function AdminFinalizeOnboardPage() {
                       </button>
                     )}
                     {stepId === "profile" && (
-                      <Button type="button" onClick={saveProfile} className="gap-1.5">
-                        Save & continue <HiOutlineArrowRight size={14} />
+                      <Button
+                        type="button"
+                        onClick={saveProfile}
+                        disabled={uploadingProfile}
+                        className="gap-1.5"
+                      >
+                        {uploadingProfile ? "Uploading…" : "Save & continue"}{" "}
+                        <HiOutlineArrowRight size={14} />
                       </Button>
                     )}
                     {stepId === "categories" && (

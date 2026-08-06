@@ -121,3 +121,8 @@ export interface BranchSummary {
   region?: string;
   isActive: boolean;
 }
+
+export interface TenantImagesRequest {
+  logo: File;
+  ownerImage: File;
+}

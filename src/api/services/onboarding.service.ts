@@ -1,10 +1,11 @@
-import type { BusinessModel } from "../../types/gloable.types";
+import type { BusinessModel, SubType } from "../../types/gloable.types";
 import type {
   AttendancePolicyRequest,
   ServiceCategory,
   ServiceCategoryCreateRequest,
   ServiceCreateRequest,
   StaffingOnboardRequest,
+  TenantImagesRequest,
 } from "../../types/onboarding";
 import type { Branch } from "../../types/salon";
 import type { AttendencePolicy, StaffProfile } from "../../types/tentant.types";
@@ -29,12 +30,30 @@ export const onboardingService = {
   createService: async (payload: ServiceCreateRequest): Promise<ApiResponse<unknown>> =>
     (await api.post<ApiResponse<unknown>>("/services", payload)).data,
 
+  /**
+   * POST /tenants/storeImages — uploads the business logo + owner photo as
+   * multipart/form-data. The backend responds with a success message only.
+   */
+  storeTenantImages: async (payload: Partial<TenantImagesRequest>): Promise<ApiResponse<null>> => {
+    const form = new FormData();
+    if (payload.logo) form.append("logo", payload.logo);
+    if (payload.ownerImage) form.append("ownerImage", payload.ownerImage);
+    return (
+      await api.post<ApiResponse<null>>("/tenants/storeImages", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+    ).data;
+  },
+
   getBusinessModels: async (): Promise<ApiResponse<BusinessModel[]>> =>
     (await api.get<ApiResponse<BusinessModel[]>>("/global/business-models")).data,
 
   getBranches: async (): Promise<ApiResponse<Branch[]>> =>
-    (await api.get<ApiResponse<Branch[]>>("/branches")).data,
-
+    (await api.get<ApiResponse<Branch[]>>("/tenants/branches")).data,
+  getBranchesBusinessModels: async (branchId: string): Promise<ApiResponse<BusinessModel[]>> =>
+    (await api.get<ApiResponse<BusinessModel[]>>(`/tenants/branch/business-models?branchId=${branchId}`)).data,
+  getBranchesBusinessSubModel: async (branchId: string): Promise<ApiResponse<SubType[]>> =>
+    (await api.get<ApiResponse<SubType[]>>(`/tenants/branch/business-submodels?branchId=${branchId}`)).data,
   createAttendancePolicy: async (payload: AttendancePolicyRequest): Promise<ApiResponse<AttendencePolicy>> =>
     (await api.post<ApiResponse<AttendencePolicy>>("/staff-onboard/attendence-polilcy", payload)).data,
 
